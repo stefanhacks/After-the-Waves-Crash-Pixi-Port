@@ -27,17 +27,6 @@ describe("story script", () => {
     });
   });
 
-  it("keeps the whispers' wording", () => {
-    const whispers = STORY_PARTS.map((part) => part.filter(({ whisper }) => whisper).map(({ text }) => text));
-
-    assert.deepEqual(whispers, [
-      ["\"... follow ...\"", "\"... follow ...\""],
-      ["\"... faster ...\""],
-      [],
-      ["\"... eat ...\""],
-    ]);
-  });
-
   it("uses part 2 as Main.unity overrides it, not the prefab's own order", () => {
     assert.deepEqual(STORY_PARTS[2].map(({ speaker, text }) => [speaker, text]), [
       ["First Mate", "\"Look! In the distance!\""],

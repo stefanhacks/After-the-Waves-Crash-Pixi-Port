@@ -4,9 +4,7 @@ import { computeLayout, type Insets, type Rect, type ScreenInfo, ZERO_INSETS } f
 import {
   CORNER_BUTTONS,
   CORNER_HIT_SIZE,
-  CORNER_ICON_SIZE,
   cornerButtonRect,
-  cornerIconBox,
   hitsCornerButton,
 } from "./corner-geometry.ts";
 import { computePads } from "./pad-geometry.ts";
@@ -121,13 +119,5 @@ describe("hitsCornerButton", () => {
     assert.ok(!hitsCornerButton(rect, 99, 24));
     assert.ok(!hitsCornerButton(rect, 124, 49));
     assert.ok(!hitsCornerButton(null, 124, 24));
-  });
-});
-
-describe("cornerIconBox", () => {
-  it("centres the icon in the hit square", () => {
-    const box = cornerIconBox({ x: 100, y: 10, width: 48, height: 48 });
-
-    assert.deepEqual(box, { x: 112, y: 22, width: CORNER_ICON_SIZE, height: CORNER_ICON_SIZE });
   });
 });

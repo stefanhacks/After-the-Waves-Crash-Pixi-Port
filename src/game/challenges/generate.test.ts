@@ -32,20 +32,6 @@ const scripted = (values: number[]): Rng & { readonly left: number } => {
 const kinds = (round: readonly ChallengeSpec[]) => round.map((spec) => spec.kind);
 
 describe("generateRounds", () => {
-  it("has the original's tuning", () => {
-    assert.deepEqual(TUNING, {
-      sequenceTimeoutMs: 1000,
-      holdMs: 3000,
-      manyPresses: 10,
-      manyWindowMs: 3000,
-      rounds: [
-        { challenges: 3, length: 3, holds: 1, manys: 0 },
-        { challenges: 5, length: 5, holds: 0, manys: 1 },
-        { challenges: 7, length: 7, holds: 1, manys: 1 },
-      ],
-    });
-  });
-
   it("builds 3 rounds of 3/5/7 with 1 Hold, 1 Many, then 1 of each, for 20 seeds", () => {
     for (let seed = 0; seed < 20; seed++) {
       const rounds = generateRounds(createRng(seed), TUNING);

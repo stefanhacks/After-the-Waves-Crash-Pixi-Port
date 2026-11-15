@@ -334,7 +334,9 @@ test.describe("at DPR 3", () => {
   // Three 2000² read-backs, under load.
   test.describe.configure({ timeout: 60_000 });
 
-  test("resizes the same render texture when k changes, already drawn when the resize returns", async ({ page }) => {
+  test("resizes the same render texture when k changes, already drawn when the resize returns", {
+    tag: "@slow",
+  }, async ({ page }) => {
     const problems = watchErrors(page);
 
     await page.goto(`/?debug&timescale=${FAST}`);

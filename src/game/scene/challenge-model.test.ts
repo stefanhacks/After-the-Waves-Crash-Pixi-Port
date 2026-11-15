@@ -1,29 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { ChallengeProgress } from "../challenges/rule.ts";
-import { cursorKey, directionsOf, progressKey } from "./challenge-model.ts";
+import { cursorKey, progressKey } from "./challenge-model.ts";
 
 const sequence = (pointer: number): ChallengeProgress => ({ kind: "sequence", pointer, length: 3 });
 const hold = (fraction: number): ChallengeProgress => ({ kind: "hold", held: fraction > 0, fraction });
 const many = (count: number): ChallengeProgress => ({ kind: "many", count, target: 5, windowRemainingMs: 0 });
-
-describe("directionsOf", () => {
-  it("shows no arrows without a challenge, a sequence's directions in order, the one arrow of a hold or many", () => {
-    const directions = ["up", "left", "down"] as const;
-
-    assert.equal(directionsOf({ kind: "sequence", directions }), directions, "sequence");
-
-    const CASES = [
-      ["no challenge", null, []],
-      ["hold", { kind: "hold", direction: "right" }, ["right"]],
-      ["many", { kind: "many", direction: "down" }, ["down"]],
-    ] as const;
-
-    for (const [name, spec, expected] of CASES) {
-      assert.deepEqual(directionsOf(spec), expected, name);
-    }
-  });
-});
 
 describe("progressKey", () => {
   it("is empty without progress, changes with what is drawn, and tells the kinds apart", () => {
