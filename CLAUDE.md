@@ -30,7 +30,7 @@ If `node_modules` is missing, install with `npm ci`. Run `npm run check` (`typec
 ## Git workflow
 
 - Never commit or push to `main`. Always work on a branch.
-- Branch names are flat, lowercase, hyphenated, with no slashes, and start with `cl-`: `cl-fix-spin-button`, not `fix/spin-button`. Netlify turns the branch name into the preview URL.
+- Branch names are flat, lowercase, hyphenated, with no slashes, and start with `cl-`: `cl-fix-spin-button`, not `fix/spin-button`. The branch name gives the task name in the answer header.
 - If the session or harness assigns a branch that breaks this rule (e.g. `claude/<something>`), don't push to it. Use a `cl-<task-name>` branch instead.
 - Create new branches from a freshly fetched `origin/main`, never from whatever is checked out, unless the user says otherwise.
 - Push after each requested change.
