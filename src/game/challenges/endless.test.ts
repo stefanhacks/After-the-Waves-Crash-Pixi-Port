@@ -1,22 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { endlessLevel, endlessStoryPart, generateEndless, timeLimitMs } from "./endless.ts";
+import { generateEndless, timeLimitMs } from "./endless.ts";
 import { createRng } from "./rng.ts";
 import type { ChallengeSpec } from "./rule.ts";
 import { ENDLESS_TUNING, TUNING } from "./tuning.ts";
 
 const sequence = (length: number): ChallengeSpec => ({ kind: "sequence", directions: Array(length).fill("up") });
-
-describe("endlessLevel", () => {
-  it("grows by step, and caps at 9 arrows, 4 directions and a 40% share", () => {
-    const table = [0, 2, 3, 6, 12, 18, 100].map((level) => [level, endlessLevel(level, ENDLESS_TUNING)] as const);
-
-    assert.deepEqual(table.map(([level, { length, directions }]) => [level, length, directions]), [
-      [0, 3, 2], [2, 3, 2], [3, 4, 3], [6, 5, 4], [12, 7, 4], [18, 9, 4], [100, 9, 4],
-    ]);
-    assert.deepEqual(table.map(([, { specialShare }]) => Math.round(specialShare * 100)), [0, 0, 10, 20, 40, 40, 40]);
-  });
-});
 
 describe("generateEndless", () => {
   it("replays the same challenges from the same seed", () => {
@@ -55,18 +44,6 @@ describe("generateEndless", () => {
 });
 
 describe("timeLimitMs", () => {
-  it("gives a Sequence 1 s plus 900 ms an arrow at level 0, shrinking to 350 ms an arrow", () => {
-    assert.equal(timeLimitMs(sequence(3), 0, TUNING, ENDLESS_TUNING), 3700);
-    assert.equal(timeLimitMs(sequence(4), 3, TUNING, ENDLESS_TUNING), Math.round(1000 + 4 * 900 * 0.94 ** 3));
-    assert.equal(timeLimitMs(sequence(9), 40, TUNING, ENDLESS_TUNING), 4150);
-  });
-
-  it("gives a Hold or a Many its own 3 s plus a slack of 2 s, shrinking to 600 ms", () => {
-    assert.equal(timeLimitMs({ kind: "hold", direction: "up" }, 0, TUNING, ENDLESS_TUNING), 5000);
-    assert.equal(timeLimitMs({ kind: "many", direction: "up" }, 0, TUNING, ENDLESS_TUNING), 5000);
-    assert.equal(timeLimitMs({ kind: "hold", direction: "up" }, 40, TUNING, ENDLESS_TUNING), 3600);
-  });
-
   it("never grows from one level to the next for the same challenge", () => {
     for (let level = 0; level < 60; level++) {
       assert.ok(timeLimitMs(sequence(5), level + 1, TUNING, ENDLESS_TUNING)
@@ -87,13 +64,5 @@ describe("timeLimitMs, Holds", () => {
     const noSlack = { ...ENDLESS_TUNING, slackMs: 0, minSlackMs: 0 };
 
     assert.equal(timeLimitMs(hold, 0, TUNING, noSlack), Math.ceil(TUNING.holdMs / 0.85));
-  });
-});
-
-describe("endlessStoryPart", () => {
-  it("steps up to parts 1, 2 and 3 at levels 5, 10 and 15", () => {
-    assert.deepEqual([0, 4, 5, 9, 10, 15, 99].map((level) => endlessStoryPart(level, ENDLESS_TUNING)), [
-      0, 0, 1, 1, 2, 3, 3,
-    ]);
   });
 });

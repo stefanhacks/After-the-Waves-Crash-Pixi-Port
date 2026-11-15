@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createRng, randomSeed, seedFromString } from "./rng.ts";
+import { createRng, seedFromString } from "./rng.ts";
 
 const draw = (seed: number, count: number, max: number) => {
   const rng = createRng(seed);
@@ -81,13 +81,5 @@ describe("seedFromString", () => {
 
     assert.notEqual(seedFromString("abc"), seedFromString("abd"));
     assert.equal(seedFromString(""), 0x811c9dc5);
-  });
-});
-
-describe("randomSeed", () => {
-  it("gives a uint32", () => {
-    const seed = randomSeed();
-
-    assert.ok(Number.isInteger(seed) && seed >= 0 && seed < 2 ** 32);
   });
 });

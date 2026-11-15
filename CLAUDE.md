@@ -10,8 +10,16 @@ Browser game client. Vite + TypeScript + Pixi.js (`pixi.js` is the only runtime 
 - `npm run build`: Vite build into `dist`
 - `npm run preview`: serve the `dist` build locally
 - `npm run check`: `typecheck`, `lint`, and `build` in sequence
+- `npm test`: unit tests (`node --test`, a few seconds)
+- `npm run e2e`: every Playwright spec, on desktop Chrome, iPhone 13 and Pixel 7 (about 2 minutes)
+- `npm run e2e:fast`: the same without the `@slow` tests (over 10 s each: full playthroughs, the endless run, the render-texture resize)
 
 If `node_modules` is missing, install with `npm ci`. Run `npm run check` (`typecheck`, `lint`, and `build`) before every push (`build` is `vite build`, which doesn't typecheck, and it's what Netlify runs). If they can't run (no network for installs), say so in the report instead of skipping silently.
+
+## Testing
+
+- Test behaviour that can break: rules, edge cases, timing, wiring between parts. Don't write tests that restate a constant, a data table or a one-line mapping.
+- While working, run the unit tests and only the e2e specs that cover what changed (`npx playwright test e2e/<spec>.ts`). Run the full `npm run e2e` once, when the task is mostly done.
 
 ## Ask, don't assume
 

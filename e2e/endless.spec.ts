@@ -13,7 +13,9 @@ import {
   waitFor,
 } from "./game.ts";
 
-test("opens from the icon, plays timed challenges, and a timeout ends the run with the kraken", async ({ page }) => {
+test("opens from the icon, plays timed challenges, and a timeout ends the run with the kraken", {
+  tag: "@slow",
+}, async ({ page }) => {
   await openGame(page);
 
   const driver = await keyboardDriver(page);

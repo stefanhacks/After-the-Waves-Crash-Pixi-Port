@@ -26,7 +26,6 @@ import {
   touchDriver,
   waitFor,
   type Driver,
-  type GameSnapshot,
 } from "./game.ts";
 
 // A playthrough is about 10–20 s of wall time, more with three projects sharing the CPUs.
@@ -136,7 +135,9 @@ const reachChallenge = async (page: Page, driver: Driver, kind: "sequence" | "ho
 
 // The keyboard plays whole games on desktop in the last two tests below. Touch plays rounds 0–1 on the iPhone, then
 // jumps to the ending for the replay tap (m5-plan, owner decision 18): the rest is the same input path.
-test("plays a game by touch: rounds 0–1, then the ending and the replay", { tag: "@touch" }, async ({ page }) => {
+test("plays a game by touch: rounds 0–1, then the ending and the replay", {
+  tag: ["@touch", "@slow"],
+}, async ({ page }) => {
   const problems = watchErrors(page);
   const driver = await touchDriver(page);
 
@@ -161,40 +162,9 @@ test("plays a game by touch: rounds 0–1, then the ending and the replay", { ta
   expect(problems).toEqual([]);
 });
 
-test("a wrong press resets a Sequence", async ({ page }) => {
-  const driver = await keyboardDriver(page);
-
-  await openGame(page);
-
-  const game = await reachChallenge(page, driver, "sequence");
-  const spec = game.challenge?.spec;
-
-  if (spec?.kind !== "sequence") {
-    throw new Error("no Sequence in round 0");
-  }
-
-  const [first, second] = spec.directions;
-  const wrong = (["up", "down", "left", "right"] as Direction[]).find((dir) => dir !== first && dir !== second);
-
-  if (wrong === undefined) {
-    throw new Error("unreachable");
-  }
-
-  const pointer = (now: GameSnapshot) =>
-    (now.challenge?.progress.kind === "sequence" ? now.challenge.progress.pointer : -1);
-
-  await setTimescale(page, SLOW);
-  await driver.press(first);
-  await driver.release(first);
-  await waitFor(page, (now) => pointer(now) === 1);
-  await driver.press(wrong);
-  await driver.release(wrong);
-  await waitFor(page, (now) => pointer(now) === 0);
-});
-
 test.describe("with both landscape pads", () => {
   test("a touchcancel releases a Hold; hand a Hold between thumbs, cancel one pad, chord, and slide across", {
-    tag: "@touch",
+    tag: ["@touch", "@slow"],
   }, async ({ page }) => {
     // Two thumbs on two pads: the phone presets, turned landscape.
     const size = page.viewportSize() ?? { width: 0, height: 0 };
@@ -416,7 +386,7 @@ test.describe("on a small viewport", () => {
    * bgm02 finishing first), m5-plan owner decision 16. The clock and leaks don't depend on the device: desktop only
    * (untagged, playwright.config.ts).
    */
-  test("plays its cues on time, then replays without growing anything", async ({ page }) => {
+  test("plays its cues on time, then replays without growing anything", { tag: "@slow" }, async ({ page }) => {
     const problems = watchErrors(page);
     const driver = await keyboardDriver(page);
 

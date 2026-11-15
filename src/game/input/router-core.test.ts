@@ -163,13 +163,6 @@ const setupEndless = (input: PauseInput) => {
 };
 
 describe("router core: the endless-mode icon", () => {
-  it("sits under the reduce-flashes toggle", () => {
-    const { core } = setupEndless("ready");
-
-    assert.equal(core.endlessRect?.y, (core.flashesRect?.y ?? NaN) + (core.flashesRect?.height ?? NaN));
-    assert.equal(core.endlessRect?.x, core.flashesRect?.x);
-  });
-
   it("queues an \"endless\" event on a tap or E while its input is on, with no advance or activation", () => {
     const { core, log, endlessCentre } = setupEndless("ready");
 

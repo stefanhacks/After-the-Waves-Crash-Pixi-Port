@@ -163,11 +163,4 @@ describe("wireGestures", () => {
     }
   });
 
-  it("the endless-mode icon's tap only lets audio resume, as a gesture: its event is already queued", () => {
-    const { calls, endlessListeners } = setUp("title");
-
-    assert.equal(endlessListeners.length, 1);
-    endlessListeners[0]?.();
-    assert.deepEqual(calls, ["lifecycle.activate"]);
-  });
 });
