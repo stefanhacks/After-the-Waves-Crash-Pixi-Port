@@ -2,7 +2,7 @@
 // off (lightning.ts `flashRule`). Persisted like mute. Pure TypeScript with no Pixi import, so it runs under
 // `node --test`. Written by Claude Code.
 
-export const REDUCE_FLASHES_STORAGE_KEY = "mini-one.flashes.reduced";
+export const REDUCE_FLASHES_STORAGE_KEY = "after-the-waves-crash.flashes.reduced";
 
 /** The stored flag. Anything but "1" (missing, corrupt, from another version) is the default: off. */
 export const parseReduceFlashes = (raw: string | null): boolean => raw === "1";

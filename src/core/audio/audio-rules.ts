@@ -18,7 +18,7 @@ export const sourceParams = (asset: AudioAsset): SourceParams =>
     ? { offset: asset.offset, loop: true, loopStart: asset.loopStart, loopEnd: asset.loopEnd }
     : { offset: asset.offset, loop: false, loopStart: 0, loopEnd: 0 };
 
-export const MUTE_STORAGE_KEY = "mini-one.audio.muted";
+export const MUTE_STORAGE_KEY = "after-the-waves-crash.audio.muted";
 
 /** The stored mute flag. Anything but "1" or "0" (missing, corrupt, from another version) is the default: unmuted. */
 export const parseMuted = (raw: string | null): boolean => raw === "1";

@@ -20,11 +20,10 @@ Node 22 (see `.nvmrc`).
 
 ## Deploys
 
-Netlify builds every branch and PR (`netlify.toml`):
+Netlify builds `main` and every PR (`netlify.toml`); branch deploys are off:
 
-- Production (`main`): https://mini-one.netlify.app
-- Branch preview: `https://<branch>--mini-one.netlify.app`
-- PR preview: `https://deploy-preview-<pr-number>--mini-one.netlify.app`
+- Production (`main`): https://after-the-waves-crash.netlify.app
+- PR preview: `https://deploy-preview-<pr-number>--after-the-waves-crash.netlify.app`
 
 ## License
 
