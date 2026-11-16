@@ -74,7 +74,7 @@ Milestone M5 from [04-implementation-difficulty.md](04-implementation-difficulty
 **Built in wave 2 (Elf Lamplighter):**
 - `src/game/screen-tone.ts` sets `renderer.background.color` to `[a, a, a]` only when it changes, from the flash's alpha (black while it is hidden). It runs as its own guarded ticker listener after the audio tick and before the playfield's render pass (`frame-loop.ts`), so a halted game keeps its last tone. The render texture's pass passes its own `clearColor` (opaque black, `core/display.ts`), so it never takes the grey.
 - The rule is one table, `flashRule(reducedMotion, reduceFlashes)` in `src/game/lightning.ts`: the flash is capped under either; the tone is off only with the toggle. The square's cap is read at each strike (as before); the tone reads the toggle every frame, so turning it on mid-flash blacks the letterbox at once while the square finishes its strike.
-- The toggle (`src/game/reduce-flashes.ts`, key `mini-one.flashes.reduced`, `try`/`catch` like mute) is the third corner button (`flashes-button.ts`, a bolt, struck through when on). It shows from the gate on, like mute; a tap only toggles (no audio unlock, no resume, paused or not). No key.
+- The toggle (`src/game/reduce-flashes.ts`, key `after-the-waves-crash.flashes.reduced`, `try`/`catch` like mute) is the third corner button (`flashes-button.ts`, a bolt, struck through when on). It shows from the gate on, like mute; a tap only toggles (no audio unlock, no resume, paused or not). No key.
 - The ui layer's order is now: debug overlay, pad, mute, pause, **reduce flashes**, Tap to continue, the gate's view, the scene's texts.
 
 ### 4. Reduced motion everywhere

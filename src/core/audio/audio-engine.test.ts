@@ -607,7 +607,7 @@ describe("audio engine (fake AudioContext)", () => {
 
       engine.setMuted(true);
       assert.deepEqual(masterGain()?.calls, [["cancel", 4], ["target", 0, 4, 0.015]]);
-      assert.equal(world.storage.get("mini-one.audio.muted"), "1");
+      assert.equal(world.storage.get("after-the-waves-crash.audio.muted"), "1");
 
       install();
 
@@ -616,7 +616,7 @@ describe("audio engine (fake AudioContext)", () => {
       assert.equal(next.muted, true);
       assert.equal(masterGain()?.value, 0);
       next.setMuted(false);
-      assert.equal(world.storage.get("mini-one.audio.muted"), "0");
+      assert.equal(world.storage.get("after-the-waves-crash.audio.muted"), "0");
     });
   });
 
