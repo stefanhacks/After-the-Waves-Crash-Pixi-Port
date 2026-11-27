@@ -30,7 +30,7 @@ export const directionsOf = (spec: ChallengeSpec | null): readonly Direction[] =
 
 /**
  * A key that changes only when the drawn progress does, so `setProgress` can be called every frame. A hold's fraction
- * counts to 3 decimals. No progress is "".
+ * counts to 3 decimals, and a paused one (Brace eased) draws differently. No progress is "".
  */
 export const progressKey = (value: ChallengeProgress | null) => {
   if (value === null) {
@@ -41,7 +41,7 @@ export const progressKey = (value: ChallengeProgress | null) => {
   case "sequence":
     return `s${value.pointer}`;
   case "hold":
-    return `h${value.fraction.toFixed(3)}`;
+    return `h${value.fraction.toFixed(3)}${value.leaning ? "" : "p"}`;
   case "many":
     return `m${value.count}`;
   }

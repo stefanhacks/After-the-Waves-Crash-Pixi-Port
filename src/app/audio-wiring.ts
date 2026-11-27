@@ -1,10 +1,12 @@
-// Audio (M3) and the pause (M5): the engine, the corner buttons (mute, pause, reduce flashes, endless mode), "Tap to
+// Audio (M3) and the pause (M5): the engine, the corner buttons (mute, pause, reduce flashes, controls, endless mode),
+// "Tap to
 // continue" and
 // the audio lifecycle, then the gestures that drive them. The states play the cues and pick the music (states/cues.ts,
 // story.ts). Written by Claude Code.
 import { createAudioEngine, type AudioEngine } from "../core/audio/audio-engine.ts";
 import type { Layers } from "../core/layers.ts";
 import { createAudioLifecycle, type AudioLifecycle } from "../game/audio-lifecycle.ts";
+import { createControlsButton } from "../game/controls-button.ts";
 import { createEndlessButton } from "../game/endless-button.ts";
 import { createFlashesButton, type FlashesButtonView } from "../game/flashes-button.ts";
 import type { InputRouter } from "../game/input/dom-router.ts";
@@ -24,6 +26,7 @@ export const wireAudio = (layers: Layers, layouts: LayoutBus, reduceFlashes: Pic
   const muteButton = createMuteButton(layers.ui);
   const pauseButton = createPauseButton(layers.ui);
   const flashesButton = createFlashesButton(layers.ui);
+  const controlsButton = createControlsButton(layers.ui);
   const endlessButton = createEndlessButton(layers.ui, watchReducedMotion());
 
   muteButton.setMuted(audio.muted);
@@ -32,6 +35,7 @@ export const wireAudio = (layers: Layers, layouts: LayoutBus, reduceFlashes: Pic
     muteButton.setLayout(next);
     pauseButton.setLayout(next);
     flashesButton.setLayout(next);
+    controlsButton.setLayout(next);
     endlessButton.setLayout(next);
   });
 
@@ -46,7 +50,7 @@ export const wireAudio = (layers: Layers, layouts: LayoutBus, reduceFlashes: Pic
     () => document.visibilityState === "visible",
   );
 
-  return { audio, muteButton, pauseButton, flashesButton, endlessButton, continuePrompt, lifecycle };
+  return { audio, muteButton, pauseButton, flashesButton, endlessButton, controlsButton, continuePrompt, lifecycle };
 };
 
 export interface GestureWiring {

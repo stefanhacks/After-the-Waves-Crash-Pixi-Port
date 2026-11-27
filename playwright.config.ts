@@ -15,6 +15,12 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: "off",
+    // The phones' coarse pointer would default to swipe mode (m6-plan); every spec but gestures.spec.ts drives the pad,
+    // so the stored choice starts as the pad. gestures.spec.ts sets swipe itself.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: BASE_URL, localStorage: [{ name: "after-the-waves-crash.controls.mode", value: "pad" }] }],
+    },
   },
   // Most checks don't depend on the device, so they run on desktop only. The phones run only the tests tagged with
   // what makes them device-specific (Playwright's grep matches tags):

@@ -1,11 +1,12 @@
 // The bootstrap, in startup order: each step is a module in src/app/. Several of these orders are contracts
-// (m4-refactor.md, rules 1–2): the ui layer's children (debug overlay, pad, mute button, pause button, reduce-flashes
-// button, endless-mode button, Tap to continue, the gate's view, then the scene's texts), the router's
-// `visibilitychange` listener before the page lifecycle's, Gate's activation hook before the lifecycle's, and the
-// ticker's game logic → audio tick → screen tone → render pass.
+// (m4-refactor.md, rules 1–2): the ui layer's children (debug overlay, pad, ghost stroke, mute button, pause button,
+// reduce-flashes button, controls button, endless-mode button, Tap to continue, the gate's view, then the scene's
+// texts), the router's `visibilitychange` listener before the page lifecycle's, Gate's activation hook before the
+// lifecycle's, and the ticker's game logic → audio tick → screen tone → render pass.
 import "./style.css";
 import { wireAudio, wireGestures } from "./app/audio-wiring.ts";
 import { createCueLog } from "./app/cue-log.ts";
+import { wireControls } from "./app/controls-wiring.ts";
 import { createDebugApi } from "./app/debug-wiring.ts";
 import { startFrameLoop } from "./app/frame-loop.ts";
 import { createGameLoader } from "./app/game-loader.ts";
@@ -41,15 +42,17 @@ const launch = readLaunchOptions(window.location.search, stage.debugEnabled);
 const timescale = createTimescale(launch.timescale, stage.debugEnabled);
 const nextSeed = createSeeder(launch.seed);
 
-const { router, padView } = wireInput(stage, layouts);
+const { router, padView, gestureHint } = wireInput(stage, layouts);
 const clock = new GameClock();
 // The animation clips, on game time: the frame loop syncs them after each step, the scene plays them.
 const clips = createClipPlayer(clock);
 // The "reduce flashes" toggle, as stored: the strikes and the screen tone read it.
 const reduceFlashes = createReduceFlashes();
-const { audio, lifecycle, muteButton, pauseButton, flashesButton, endlessButton, continuePrompt } = wireAudio(
-  layers, layouts, reduceFlashes,
-);
+const {
+  audio, lifecycle, muteButton, pauseButton, flashesButton, endlessButton, controlsButton, continuePrompt,
+} = wireAudio(layers, layouts, reduceFlashes);
+// Swipe or pad (m6-plan): the states' pad and challenge controls go through it.
+const swipe = wireControls({ router, padView, gestureHint, controlsButton, display, layouts, clock, audio });
 const cueLog = createCueLog(() => clock.now);
 
 // The gate's view needs nothing loaded; the scene needs the textures and the font.
@@ -72,7 +75,8 @@ const game = createGame({
     drain: () => lifecycle.filter(router.drain()),
     beginEpoch: () => router.beginEpoch(),
   },
-  pad: padView,
+  pad: swipe.pad,
+  controls: swipe.controls,
   scene: loading.requireScene,
   nextSeed,
   tuning: TUNING,
@@ -85,7 +89,11 @@ const game = createGame({
     },
   },
   // Pixi keeps a null key per text it let go (text-cache.ts); a new game starts without them.
-  onTitle: () => pruneTextCache(app.renderer),
+  // Every challenge kind gets its ghost stroke again in a new game.
+  onTitle: () => {
+    pruneTextCache(app.renderer);
+    swipe.newGame();
+  },
 });
 const machine = new StateMachine<GameStateId>(clock, game.states);
 const stepper = createFrameStepper(machine);
@@ -108,7 +116,7 @@ const screenTone = createScreenTone({
 
 window.debug = createDebugApi({
   app, clock, machine, layers, display, layouts, router, audio, cueLog, game, timescale, loading, errors, clips, pause,
-  continuePrompt, reduceFlashes, screenTone,
+  continuePrompt, reduceFlashes, screenTone, swipe, gestureHint,
 });
 
 // The weather exists once the scene is built; until then there is nothing to move. Reduced motion is read first, so a
@@ -132,6 +140,7 @@ startFrameLoop({
   clips,
   weather,
   endlessButton,
+  swipe,
   screenTone,
   errors,
   renderPlayfield,

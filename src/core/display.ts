@@ -17,6 +17,10 @@ export class PlayfieldDisplay {
   // copies it into the render group and restores the old one afterwards.
   private readonly options: RenderOptions;
   private k = 1;
+  // The square's snapped corner, and the screen shake's offset from it (game/screen-shake.ts), in CSS px.
+  private squareX = 0;
+  private squareY = 0;
+  private offsetX = 0;
 
   /** `playfield` must not be on the stage: Pixi would draw it a second time, unscaled. */
   constructor(renderer: Renderer, playfield: Container) {
@@ -65,9 +69,20 @@ export class PlayfieldDisplay {
 
     // The square is already snapped to device pixels, so the browser never resamples it a second time. Set after any
     // resize: the sprite's scale is relative to the texture's size.
-    this.sprite.position.set(layout.square.x, layout.square.y);
+    this.squareX = layout.square.x;
+    this.squareY = layout.square.y;
+    this.sprite.position.set(this.squareX + this.offsetX, this.squareY);
     this.sprite.width = layout.square.width;
     this.sprite.height = layout.square.height;
+  }
+
+  /**
+   * Moves the shown square `x` CSS px sideways from its place (the screen shake; 0 puts it back). The page around the
+   * square is black, as the art's edges are, so nothing shows through. Kept across `resize`.
+   */
+  setOffset(x: number): void {
+    this.offsetX = x;
+    this.sprite.position.set(this.squareX + x, this.squareY);
   }
 
   /** Draws the playfield into the render texture, cleared first. Call it every frame, before Pixi draws the stage. */

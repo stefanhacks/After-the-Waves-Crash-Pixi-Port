@@ -279,7 +279,7 @@ test("a Hold close to its end, let go while the tab is hidden, doesn't complete:
   const resumed = await readGame(page);
 
   expect(resumed.challenge?.index).toBe(game.challenge?.index);
-  expect(resumed.challenge?.progress).toEqual({ kind: "hold", held: false, fraction: 0 });
+  expect(resumed.challenge?.progress).toEqual({ kind: "hold", held: false, leaning: false, fraction: 0 });
 
   // Frames run again, and the same Hold never completes on its own: at FAST time, 10 frames are seconds of game time.
   await waitFrames(page);
@@ -292,15 +292,18 @@ test("a Hold close to its end, let go while the tab is hidden, doesn't complete:
 
 test("the ui layer's children at Title, in order", async ({ page }) => {
   await openGame(page);
-  // Back to front: what main.ts adds (debug overlay, pad, mute, pause, reduce flashes, endless mode, Tap to continue),
-  // then the gate's view and the scene's texts. The M4 refactor must keep this order (m4-refactor.md, rule 1); M5 adds
-  // the pause button and the reduce-flashes toggle under mute; endless mode its icon below them and the time bar.
+  // Back to front: what main.ts adds (debug overlay, pad, ghost stroke, mute, pause, reduce flashes, controls,
+  // endless mode, Tap to continue), then the gate's view and the scene's texts. The M4 refactor must keep this order
+  // (m4-refactor.md, rule 1); M5 adds the pause button and the reduce-flashes toggle under mute; endless mode its icon
+  // below them and the time bar; M6 the ghost stroke with the pad and the controls toggle above endless mode.
   expect(await page.evaluate(() => window.debug.layers.ui.children.map((child) => child.label))).toEqual([
     "debug-overlay",
     "pad-view",
+    "gesture-hint",
     "mute-button",
     "pause-button",
     "flashes-button",
+    "controls-button",
     "endless-button",
     "continue",
     "gate-warning",

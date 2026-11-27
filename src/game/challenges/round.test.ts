@@ -221,7 +221,7 @@ describe("Round.resetCurrent (the pause's resume)", () => {
     round.press("up");
     clock.tick(TUNING.holdMs - 1);
     round.resetCurrent();
-    assert.deepEqual(round.current?.progress, { kind: "hold", held: false, fraction: 0 });
+    assert.deepEqual(round.current?.progress, { kind: "hold", held: false, leaning: false, fraction: 0 });
     clock.tick(TUNING.holdMs * 2);
     assert.equal(round.done, false);
 

@@ -26,14 +26,21 @@
 //   round's first input, and can't release or advance anything either.
 // - `onAdvance` (the constructor's optional listener) is called synchronously every time an "advance" is queued, inside
 //   the same call, so inside the DOM event that caused it. It is the router's activation hook (audio unlock).
+// - Swipe mode (m6-plan): the gesture recognisers (gestures/) queue their own "press", "release", "ease" and "stray"
+//   through `queueGesture`. Their pointers are tracked here as holding nothing, so their pointerup still advances and
+//   activates; the directions they press are not "held" for `isHeld` (the pad isn't drawn in swipe mode).
 // - If more than MAX_QUEUED_EVENTS pile up undrained, the queue is flushed as by `beginEpoch` and holds a single
 //   "cancel". Individual presses and releases are never dropped on their own.
 
 import { type Direction, DIRECTIONS } from "../direction.ts";
+import type { GestureEvent } from "./gestures/gesture.ts";
 
 export type InputEvent =
   | { readonly kind: "press" | "release"; readonly dir: Direction }
   | { readonly kind: "advance" | "cancel" }
+  // Brace (swipe mode, m6-plan): the lean on `dir` stopped with the finger still down, and a lean into a wrong sector.
+  | { readonly kind: "ease"; readonly dir: Direction }
+  | { readonly kind: "stray" }
   // The endless-mode icon's tap or key (endless-plan.md): Title's prompt and the Ending's replay take it.
   | { readonly kind: "endless" };
 
@@ -155,6 +162,11 @@ export class PointerMap {
    */
   queueEndless(): void {
     this.enqueue({ kind: "endless" });
+  }
+
+  /** Queues a gesture recogniser's event (router-core.ts, swipe mode), with no activation. Written by Claude Code. */
+  queueGesture(event: GestureEvent): void {
+    this.enqueue(event);
   }
 
   /** Returns the queued events, oldest first, and empties the queue. */

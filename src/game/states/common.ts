@@ -25,11 +25,13 @@ export const hidePad = (pad: PadControl) => {
 
 /**
  * Feeds one input event to a challenge (m2-plan: an explicit switch, as challenges/ must not import input/): press,
- * release and cancel go to it, the taps are dropped.
+ * release, ease and cancel go to it, the taps are dropped. Brace's "stray" never reaches the rule: it calls `onStray`
+ * (the screen shake, m6-plan owner decision 4).
  */
 export const applyChallengeInput = (
-  rule: Pick<ChallengeRule, "press" | "release" | "cancelAll">,
+  rule: Pick<ChallengeRule, "press" | "release" | "ease" | "cancelAll">,
   event: InputEvent,
+  onStray: () => void = () => undefined,
 ) => {
   switch (event.kind) {
   case "press":
@@ -38,8 +40,14 @@ export const applyChallengeInput = (
   case "release":
     rule.release(event.dir);
     break;
+  case "ease":
+    rule.ease(event.dir);
+    break;
   case "cancel":
     rule.cancelAll();
+    break;
+  case "stray":
+    onStray();
     break;
   case "advance":
   case "endless":

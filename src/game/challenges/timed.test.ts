@@ -57,6 +57,21 @@ describe("TimedChallenge", () => {
     assert.deepEqual(timed.progress, { kind: "sequence", pointer: 0, length: 3 });
   });
 
+  it("times out a Hold paused by ease (Brace), and passes the ease to the rule", () => {
+    const { clock, timed, events } = setup({ kind: "hold", direction: "up" }, 4000);
+
+    timed.press("up");
+    clock.tick(2000);
+    timed.ease("up");
+    clock.tick(1500);
+    assert.deepEqual(timed.progress, { kind: "hold", held: true, leaning: false, fraction: 2 / 3 });
+    timed.press("up");
+    clock.tick(500);
+
+    assert.deepEqual(events, ["timeout 4000"]);
+    assert.equal(clock.pendingTimers, 0);
+  });
+
   it("lets a Hold that completes at the limit's moment count as in time", () => {
     const { clock, timed, events } = setup({ kind: "hold", direction: "up" }, TUNING.holdMs);
 

@@ -5,12 +5,13 @@
 // The decisions (corner buttons first, pads, the activation, mute, pause, reduce-flashes and endless hooks) live in
 // router-core.ts, with their contract.
 
+import type { GestureTuning } from "../challenges/tuning.ts";
 import type { Direction } from "../direction.ts";
 import type { Layout, Rect } from "../../core/layout.ts";
 import { getGameElement } from "../../core/viewport.ts";
 import { attachKeyboard } from "./keyboard.ts";
 import type { InputEvent } from "./pointer-map.ts";
-import { createRouterCore, type PauseInput } from "./router-core.ts";
+import { createRouterCore, type ControlsMode, type GestureControl, type PauseInput } from "./router-core.ts";
 
 export interface InputRouter {
   /** The queued events, oldest first; empties the queue. See pointer-map.ts for the contract. */
@@ -59,6 +60,29 @@ export interface InputRouter {
   setEndlessInput(on: boolean): void;
   /** What the pause button and keys do from now on: "off", "ready" or "paused" (see router-core.ts). */
   setPauseInput(input: PauseInput): void;
+  /** The controls toggle's hit square in the current layout (corner-geometry.ts), or null. */
+  readonly controlsRect: Rect | null;
+  /**
+   * Turns on the controls toggle's hit area: a tap on it calls `listener` (to flip swipe / pad) and gives no press,
+   * advance or activation, paused or not. Returns the unsubscribe.
+   */
+  onControls(listener: () => void): () => void;
+  /** The challenges' control from now on (m6-plan owner decision 1). */
+  setControls(mode: ControlsMode): void;
+  readonly controls: ControlsMode;
+  /** The gesture of the challenge up now, or null (router-core.ts has the contract). */
+  setGesture(control: GestureControl | null): void;
+  /** Whether a gesture recogniser takes the control zones now. */
+  readonly gestureActive: boolean;
+  /** How many gesture presses (swipes, leans, Haul strokes' presses) were emitted so far. */
+  readonly gesturePresses: number;
+  /** Whether Brace's finger leans on the heading now. */
+  readonly gestureLeaning: boolean;
+  /** The live gesture tunables, for `window.debug.gestures`. */
+  readonly gestureTuning: GestureTuning;
+  setGestureTuning(tuning: GestureTuning): void;
+  /** The active recogniser's state, or null, for `window.debug.gestures`. */
+  inspectGesture(): Record<string, unknown> | null;
   /** Whether `dir` is held by any pointer or key, for the pad view. */
   isHeld(dir: Direction): boolean;
   /** Removes every listener. */
@@ -95,6 +119,14 @@ export const createInputRouter = (canvas: HTMLElement, frame: HTMLElement = getG
     }
   };
 
+  // Swipe mode's drags (m6-plan): router-core passes them to the recogniser, which ignores pointers it doesn't track.
+  // Touch is captured implicitly and the mouse by setPointerCapture, so moves past the canvas still arrive.
+  const onPointerMove = (event: PointerEvent) => {
+    const { x, y } = local(event);
+
+    core.pointerMove(event.pointerId, x, y);
+  };
+
   const onPointerUp = (event: PointerEvent) => {
     const { x, y } = local(event);
 
@@ -126,6 +158,7 @@ export const createInputRouter = (canvas: HTMLElement, frame: HTMLElement = getG
   const { signal } = listeners;
 
   canvas.addEventListener("pointerdown", onPointerDown, { signal });
+  canvas.addEventListener("pointermove", onPointerMove, { signal });
   canvas.addEventListener("pointerup", onPointerUp, { signal });
   canvas.addEventListener("pointercancel", onPointerCancel, { signal });
   canvas.addEventListener("touchend", onTouchEnd, { passive: true, signal });
@@ -142,7 +175,7 @@ export const createInputRouter = (canvas: HTMLElement, frame: HTMLElement = getG
 
   return {
     drain: () => core.map.drain(),
-    beginEpoch: () => core.map.beginEpoch(),
+    beginEpoch: () => core.beginEpoch(),
     setLayout: (layout) => core.setLayout(layout),
     get muteRect() {
       return core.muteRect;
@@ -163,6 +196,29 @@ export const createInputRouter = (canvas: HTMLElement, frame: HTMLElement = getG
     onEndless: (listener) => core.onEndless(listener),
     setEndlessInput: (on) => core.setEndlessInput(on),
     setPauseInput: (input) => core.setPauseInput(input),
+    get controlsRect() {
+      return core.controlsRect;
+    },
+    onControls: (listener) => core.onControls(listener),
+    setControls: (mode) => core.setControls(mode),
+    get controls() {
+      return core.controls;
+    },
+    setGesture: (control) => core.setGesture(control),
+    get gestureActive() {
+      return core.gestureActive;
+    },
+    get gesturePresses() {
+      return core.gesturePresses;
+    },
+    get gestureLeaning() {
+      return core.gestureLeaning;
+    },
+    get gestureTuning() {
+      return core.gestureTuning;
+    },
+    setGestureTuning: (tuning) => core.setGestureTuning(tuning),
+    inspectGesture: () => core.inspectGesture(),
     isHeld: (dir) => core.isHeld(dir),
     destroy: () => {
       listeners.abort();

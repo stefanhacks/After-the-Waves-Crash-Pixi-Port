@@ -41,6 +41,9 @@ export interface DebugWiring {
   readonly continuePrompt: Pick<ContinuePromptScene, "visible">;
   readonly reduceFlashes: Pick<ReduceFlashes, "on">;
   readonly screenTone: Pick<ScreenTone, "grey">;
+  /** Swipe mode (controls-wiring.ts) and its ghost stroke. */
+  readonly swipe: { readonly mode: "swipe" | "pad" };
+  readonly gestureHint: { readonly showing: boolean };
 }
 
 /**
@@ -50,7 +53,7 @@ export interface DebugWiring {
 export const createDebugApi = (wiring: DebugWiring): DebugApi => {
   const {
     app, clock, machine, layers, display, layouts, router, audio, cueLog, game, timescale, loading, errors, clips,
-    pause, continuePrompt, reduceFlashes, screenTone,
+    pause, continuePrompt, reduceFlashes, screenTone, swipe, gestureHint,
   } = wiring;
 
   return {
@@ -72,6 +75,17 @@ export const createDebugApi = (wiring: DebugWiring): DebugApi => {
     get flashes() {
       return { reduced: reduceFlashes.on, tone: screenTone.grey };
     },
+    get gestures() {
+      return {
+        controls: swipe.mode,
+        active: router.gestureActive,
+        presses: router.gesturePresses,
+        hint: gestureHint.showing,
+        state: router.inspectGesture(),
+        tuning: router.gestureTuning,
+      };
+    },
+    setGestureTuning: (tuning) => router.setGestureTuning({ ...router.gestureTuning, ...tuning }),
     get gate() {
       return { phase: game.gate.phase, progress: game.gate.progress };
     },

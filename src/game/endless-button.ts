@@ -1,5 +1,5 @@
 // The endless-mode icon's view (endless-plan.md): an infinity loop drawn with Graphics in the ui layer (CSS px), below
-// the "reduce flashes" toggle. It only draws: the input router hit-tests the same rect (input/corner-geometry.ts)
+// the controls toggle. It only draws: the input router hit-tests the same rect (input/corner-geometry.ts)
 // before the pads. Shown only while the states offer endless mode (Title's prompt, the Ending's replay prompt); on the
 // replay prompt it pulses as the tap prompt does (`TMPIdle`), held at full alpha under reduced motion. Hidden while the
 // layout has no room for it. Written by Claude Code.

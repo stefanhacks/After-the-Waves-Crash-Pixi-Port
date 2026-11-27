@@ -90,3 +90,37 @@ export const ENDLESS_TUNING: EndlessTuning = {
   betweenMs: 300,
   storyLevels: [5, 10, 15],
 };
+
+/**
+ * The touch gestures (m6-plan, 03): distances in #game CSS px, since thumbs don't scale with the playfield. Starting
+ * values from 03 for device playtests; `window.debug.gestures` can change them live. Written by Claude Code.
+ */
+export interface GestureTuning {
+  /** Chart: the shortest swipe that counts, from where the finger went down to where it lifts. */
+  readonly swipePx: number;
+  /**
+   * Chart: a swipe's other axis may be at most this share of its larger one (0.6 is about 31° off the axis). A more
+   * diagonal swipe counts for nothing.
+   */
+  readonly swipeSlantRatio: number;
+  /** Brace: the lean starts this far from where the finger went down. */
+  readonly braceThresholdPx: number;
+  /** Brace: how far off a direction's axis (degrees) the lean still counts as that direction. 45 leaves no gaps. */
+  readonly braceHalfAngleDeg: number;
+  /** Haul: the shortest stroke toward the heading that counts, from where the finger went down to where it lifts. */
+  readonly haulStrokePx: number;
+  /**
+   * Haul: the presses one correct stroke counts, so a Many's 10 take 5 strokes in its 3 s window (03's estimate was
+   * 4–6), not 10.
+   */
+  readonly haulPressesPerStroke: number;
+}
+
+export const GESTURE_TUNING: GestureTuning = {
+  swipePx: 36,
+  swipeSlantRatio: 0.6,
+  braceThresholdPx: 36,
+  braceHalfAngleDeg: 45,
+  haulStrokePx: 44,
+  haulPressesPerStroke: 2,
+};

@@ -187,7 +187,7 @@ describe("createPause", () => {
     frame();
 
     // Released and back to 0, and it never completes on its own.
-    assert.deepEqual(round()?.current?.progress, { kind: "hold", held: false, fraction: 0 });
+    assert.deepEqual(round()?.current?.progress, { kind: "hold", held: false, leaning: false, fraction: 0 });
 
     for (let elapsed = 0; elapsed < TUNING.holdMs * 2; elapsed += FRAME_MS) {
       frame();

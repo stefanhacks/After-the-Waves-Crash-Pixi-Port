@@ -79,6 +79,8 @@ export class ManyRule implements ChallengeRule {
 
   release(_dir: Direction): void {}
 
+  ease(_dir: Direction): void {}
+
   cancelAll(): void {}
 
   reset(): void {
