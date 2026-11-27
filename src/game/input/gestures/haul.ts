@@ -54,6 +54,7 @@ export const createHaul = (heading: Direction, emit: Emit, tuning: TuningSource)
     },
     letGoAll: () => ropes.clear(),
     reset: () => ropes.clear(),
+    leaning: false,
     inspect: () => ({
       kind: "haul",
       heading,

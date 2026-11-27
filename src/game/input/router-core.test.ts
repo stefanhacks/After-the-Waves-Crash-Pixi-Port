@@ -381,3 +381,134 @@ describe("router core: the iOS touchend fallback", () => {
     assert.deepEqual(log, ["activate(advance)", "mute", "activate(advance)"]);
   });
 });
+
+/** The setup above in swipe mode, with `control` as the challenge's gesture, and the control zone's centre. */
+const setupSwipe = (control: Parameters<Core["setGesture"]>[0]) => {
+  const { core, log, muteCentre, upCentre } = setup();
+  const zone = LAYOUT.zones[0];
+
+  core.setControls("swipe");
+  core.setGesture(control);
+
+  return { core, log, muteCentre, upCentre, centre: { x: zone.x + zone.width / 2, y: zone.y + zone.height / 2 } };
+};
+
+const kinds = (core: Core) =>
+  core.map.drain().map((event) => ("dir" in event ? `${event.kind} ${event.dir}` : event.kind));
+
+describe("router core: swipe mode (m6-plan)", () => {
+  it("sends a zone drag to the recogniser, not the pad: a pad button's spot presses nothing on its own", () => {
+    const { core, upCentre } = setupSwipe({ kind: "chart" });
+
+    core.pointerDown(1, upCentre.x, upCentre.y);
+    assert.deepEqual(kinds(core), [], "no pad press on pointerdown");
+    core.pointerMove(1, upCentre.x, upCentre.y - 40);
+    assert.deepEqual(kinds(core), ["press up"]);
+    assert.equal(core.isHeld("up"), false, "gesture presses don't hold");
+  });
+
+  it("still advances and activates on the gesture finger's up, after Brace's release", () => {
+    const { core, log, centre } = setupSwipe({ kind: "brace", heading: "left" });
+
+    core.pointerDown(1, centre.x, centre.y);
+    core.pointerMove(1, centre.x - 50, centre.y);
+    core.pointerUp(1, centre.x - 50, centre.y);
+    assert.deepEqual(log, ["activate(press,release,advance)"]);
+  });
+
+  it("keeps the corner buttons first", () => {
+    const { core, log, muteCentre } = setupSwipe({ kind: "haul", heading: "down" });
+
+    core.pointerDown(1, muteCentre.x, muteCentre.y);
+    core.pointerMove(1, muteCentre.x, muteCentre.y + 200);
+    core.pointerUp(1, muteCentre.x, muteCentre.y);
+    assert.deepEqual(log, ["mute"]);
+    assert.deepEqual(kinds(core), []);
+  });
+
+  it("ignores a finger that went down outside the control zones (on the playfield)", () => {
+    const { core, log } = setupSwipe({ kind: "chart" });
+    const { square } = LAYOUT;
+
+    core.pointerDown(1, square.x + 100, square.y + 100);
+    core.pointerMove(1, square.x + 100, square.y + 300);
+    core.pointerUp(1, square.x + 100, square.y + 300);
+    assert.deepEqual(log, ["activate(advance)"], "only the tap's advance (the activation hook drains the queue)");
+  });
+
+  it("ignores a finger that was down before beginEpoch or before the challenge's gesture was set", () => {
+    const { core, centre } = setupSwipe({ kind: "chart" });
+
+    core.pointerDown(1, centre.x, centre.y);
+    core.beginEpoch();
+    core.pointerMove(1, centre.x, centre.y - 80);
+    core.pointerUp(1, centre.x, centre.y - 80);
+    core.pointerDown(2, centre.x, centre.y);
+    core.setGesture({ kind: "chart" });
+    core.pointerMove(2, centre.x, centre.y - 80);
+    assert.deepEqual(kinds(core), []);
+  });
+
+  it("lets Brace's finger go on cancelAll (a hidden page), on a pointercancel, and on a new gesture", () => {
+    for (const end of ["cancelAll", "pointerCancel", "setGesture", "setControls"] as const) {
+      const { core, centre } = setupSwipe({ kind: "brace", heading: "up" });
+
+      core.pointerDown(1, centre.x, centre.y);
+      core.pointerMove(1, centre.x, centre.y - 50);
+
+      if (end === "pointerCancel") {
+        core.pointerCancel(1);
+      } else if (end === "setGesture") {
+        core.setGesture(null);
+      } else if (end === "setControls") {
+        core.setControls("pad");
+      } else {
+        core.cancelAll();
+      }
+
+      assert.deepEqual(kinds(core), ["press up", "release up"], end);
+    }
+  });
+
+  it("goes back to the pad in pad mode, or with no challenge up", () => {
+    const { core, log, upCentre } = setupSwipe({ kind: "chart" });
+
+    core.setControls("pad");
+    core.pointerDown(1, upCentre.x, upCentre.y);
+    assert.deepEqual(kinds(core), ["press up"]);
+    core.pointerUp(1, upCentre.x, upCentre.y);
+    assert.deepEqual(log, ["activate(release,advance)"]);
+    core.setControls("swipe");
+    core.setGesture(null);
+    core.pointerDown(2, upCentre.x, upCentre.y);
+    assert.deepEqual(kinds(core), ["press up"]);
+    assert.equal(core.gestureActive, false);
+  });
+
+  it("toggles on the controls button's tap, with no press, advance or activation, paused or not", () => {
+    const { core, log } = setupSwipe({ kind: "chart" });
+
+    core.onControls(() => log.push("controls"));
+    core.setPauseInput("paused");
+
+    const rect = core.controlsRect;
+
+    if (rect === null) {
+      throw new Error("no controls button");
+    }
+
+    core.pointerDown(1, rect.x + rect.width / 2, rect.y + rect.height / 2);
+    core.pointerUp(1, rect.x + rect.width / 2, rect.y + rect.height / 2);
+    assert.deepEqual(log, ["controls"]);
+    assert.deepEqual(kinds(core), []);
+  });
+
+  it("counts the gesture presses and reads live tunables", () => {
+    const { core, centre } = setupSwipe({ kind: "haul", heading: "down" });
+
+    core.setGestureTuning({ ...core.gestureTuning, knotPx: 10 });
+    core.pointerDown(1, centre.x, centre.y);
+    core.pointerMove(1, centre.x, centre.y + 30);
+    assert.equal(core.gesturePresses, 3);
+  });
+});

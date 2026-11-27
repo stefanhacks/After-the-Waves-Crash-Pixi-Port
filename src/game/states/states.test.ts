@@ -1090,6 +1090,44 @@ describe("round", () => {
     t.frame();
     assert.deepEqual(t.scene.progress, { kind: "hold", held: false, leaning: false, fraction: 0 });
   });
+
+  it("hands each challenge to the controls, and none once the round is won (m6-plan)", async () => {
+    const t = await toRound();
+    const seen: (string | null)[] = [];
+
+    while (t.game.session.phase === "play") {
+      seen.push(t.controls.challenge?.kind ?? null);
+      assert.equal(t.controls.challenge, t.scene.challenge, "the same spec the scene shows");
+      answer(t);
+    }
+
+    assert.equal(seen.length, 3);
+    assert.equal(t.controls.challenge, null);
+  });
+
+  it("pauses a Hold on Brace's ease, and shakes the screen on a stray without touching the Hold", async () => {
+    const t = await toRound();
+
+    while (t.scene.challenge?.kind !== "hold") {
+      answer(t);
+    }
+
+    const { direction } = t.scene.challenge;
+    const shakes = t.scene.shakes;
+
+    t.input.press(direction);
+    t.wait(TUNING.holdMs / 2);
+    t.input.queue.push({ kind: "ease", dir: direction }, { kind: "stray" });
+    t.frame();
+
+    const paused = t.scene.progress;
+
+    assert.equal(paused?.kind === "hold" && paused.held && !paused.leaning, true);
+    assert.equal(t.controls.screenShakes, 1);
+    assert.equal(t.scene.shakes, shakes, "the arrows stay still");
+    t.wait(TUNING.holdMs);
+    assert.deepEqual(t.scene.progress, paused, "a paused Hold doesn't fill");
+  });
 });
 
 describe("frame stepper", () => {

@@ -221,6 +221,10 @@ export const createRouterCore = () => {
     get gestureActive() {
       return recogniser !== null;
     },
+    /** Whether Brace's finger leans on the heading now. */
+    get gestureLeaning() {
+      return recogniser?.leaning ?? false;
+    },
     /** How many gesture presses were emitted so far. */
     get gesturePresses() {
       return gesturePresses;

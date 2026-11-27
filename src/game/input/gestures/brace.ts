@@ -108,6 +108,9 @@ export const createBrace = (heading: Direction, emit: Emit, tuning: TuningSource
       lean = { on: "none" };
       pressed = false;
     },
+    get leaning() {
+      return lean.on === "heading";
+    },
     inspect: () => ({
       kind: "brace",
       heading,

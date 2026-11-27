@@ -495,10 +495,10 @@ export const answerChallenge = async (page: Page, driver: Driver) => {
   await setTimescale(page, FAST);
 };
 
-/** Plays a whole round, from the Transition to the next story part. */
-export const playRound = async (page: Page, driver: Driver) => {
+/** Plays a whole round, from the Transition to the next story part. `expectPad: false` in swipe mode (no pad). */
+export const playRound = async (page: Page, driver: Driver, { expectPad = true } = {}) => {
   await waitFor(page, (game) => game.state === "round");
-  expect(await isPadVisible(page)).toBe(true);
+  expect(await isPadVisible(page)).toBe(expectPad);
 
   while ((await readGame(page)).phase === "play") {
     await answerChallenge(page, driver);
@@ -536,4 +536,97 @@ export const playGame = async (page: Page, driver: Driver, onPage?: (game: GameS
   await waitFor(page, (game) => game.state === "ending" && game.phase === "replay");
   await driver.advance();
   await waitFor(page, (game) => game.state === "title" && game.games === start.games + 1);
+};
+
+/** Stores the controls choice before the page loads (the config starts every context on the pad). */
+export const useControls = (page: Page, mode: "swipe" | "pad") => page.addInitScript((value) => {
+  window.localStorage.setItem("after-the-waves-crash.controls.mode", value);
+}, mode);
+
+/**
+ * Swipe mode (m6-plan) through CDP touches in the first control zone. A Sequence is a stroke per heading (one notch
+ * each: down, a 48 px drag, up); a Many is one finger hauling a knot per entry and returning; a Hold drags 56 px
+ * toward the heading and stays until `release`. Moves go in 4 steps, as a finger's move stream would.
+ */
+export const swipeDriver = async (page: Page): Promise<TouchDriver> => {
+  const touch = await touchDriver(page);
+  const { session } = touch;
+  const held = new Map<Direction, TouchPoint>();
+  const unit: Readonly<Record<Direction, readonly [number, number]>> = {
+    up: [0, -1],
+    down: [0, 1],
+    left: [-1, 0],
+    right: [1, 0],
+  };
+  let nextId = 1000;
+
+  const send = (type: "touchStart" | "touchMove" | "touchEnd", touchPoints: TouchPoint[]) =>
+    session.send("Input.dispatchTouchEvent", { type, touchPoints });
+
+  const centre = async (): Promise<TouchPoint> => {
+    const zone = (await readLayout(page)).zones.find((each) => each.width > 0 && each.height > 0);
+
+    if (zone === undefined) {
+      throw new Error("no control zone");
+    }
+
+    return { x: zone.x + zone.width / 2, y: zone.y + zone.height / 2, id: nextId++ };
+  };
+
+  /** Drags `from` by `length` px toward `dir` in 4 moves; returns where it ends. */
+  const drag = async (from: TouchPoint, dir: Direction, length: number) => {
+    const [dx, dy] = unit[dir];
+    let at = from;
+
+    for (let step = 1; step <= 4; step++) {
+      at = { ...from, x: from.x + (dx * length * step) / 4, y: from.y + (dy * length * step) / 4 };
+      await send("touchMove", [at]);
+    }
+
+    return at;
+  };
+
+  return {
+    ...touch,
+    press: async (dir) => {
+      const start = await centre();
+
+      await send("touchStart", [start]);
+      held.set(dir, await drag(start, dir, 56));
+    },
+    release: async (dir) => {
+      const point = held.get(dir);
+
+      if (point !== undefined) {
+        held.delete(dir);
+        await send("touchEnd", [point]);
+      }
+    },
+    tapAll: async (dirs) => {
+      // A Many answers 10 or more of one direction (answerChallenge); no Sequence is that long.
+      const many = dirs.length >= 10 && dirs.every((dir) => dir === dirs[0]);
+
+      if (many) {
+        const start = await centre();
+
+        await send("touchStart", [start]);
+
+        for (const dir of dirs) {
+          const end = await drag(start, dir, 48);
+
+          await send("touchMove", [{ ...end, x: start.x, y: start.y }]);
+        }
+
+        await send("touchEnd", [start]);
+        return;
+      }
+
+      for (const dir of dirs) {
+        const start = await centre();
+
+        await send("touchStart", [start]);
+        await send("touchEnd", [await drag(start, dir, 48)]);
+      }
+    },
+  };
 };

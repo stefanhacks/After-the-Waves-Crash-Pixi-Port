@@ -83,6 +83,7 @@ export const createChart = (emit: Emit, tuning: TuningSource): Recogniser => {
     reset: () => {
       active = null;
     },
+    leaning: false,
     inspect: () => ({ kind: "chart", active, origin: active === null ? null : { x: originX, y: originY } }),
   };
 };

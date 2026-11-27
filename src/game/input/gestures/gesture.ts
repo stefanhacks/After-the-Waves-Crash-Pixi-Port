@@ -35,6 +35,8 @@ export interface Recogniser {
   letGoAll(): void;
   /** Forgets every pointer silently (a new state or phase: the queue is dropped anyway). */
   reset(): void;
+  /** Whether a finger leans on the heading now (Brace only): the creak loop plays meanwhile. */
+  readonly leaning: boolean;
   /** A plain snapshot for `window.debug.gestures`. */
   inspect(): Record<string, unknown>;
 }

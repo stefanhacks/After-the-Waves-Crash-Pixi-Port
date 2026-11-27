@@ -76,6 +76,8 @@ export interface InputRouter {
   readonly gestureActive: boolean;
   /** How many gesture presses (notches, leans, knots) were emitted so far. */
   readonly gesturePresses: number;
+  /** Whether Brace's finger leans on the heading now. */
+  readonly gestureLeaning: boolean;
   /** The live gesture tunables, for `window.debug.gestures`. */
   readonly gestureTuning: GestureTuning;
   setGestureTuning(tuning: GestureTuning): void;
@@ -208,6 +210,9 @@ export const createInputRouter = (canvas: HTMLElement, frame: HTMLElement = getG
     },
     get gesturePresses() {
       return core.gesturePresses;
+    },
+    get gestureLeaning() {
+      return core.gestureLeaning;
     },
     get gestureTuning() {
       return core.gestureTuning;

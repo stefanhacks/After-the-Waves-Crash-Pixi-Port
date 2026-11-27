@@ -18,6 +18,8 @@ const MIN_PIP_RADIUS = 2;
 
 /** The alpha of the ring's track and of a pip not yet counted. */
 const PENDING_ALPHA = 0.25;
+/** The held part of a paused ring (Brace eased): between the pending ring and a filling one. */
+const PAUSED_ALPHA = 0.55;
 
 /** The point at `angle` on the circle of `radius` around `centre`. */
 const pointOnRing = (centre: Point, radius: number, angle: number): Point => ({
@@ -35,7 +37,10 @@ const ringFor = (layout: Layout): Ring => ({
   radius: RING_RADIUS * layout.scale,
 });
 
-/** Hold: the full ring faint, and the held fraction over it, clockwise from the top. */
+/**
+ * Hold: the full ring faint, and the held fraction over it, clockwise from the top. While paused (Brace's finger eased
+ * back, m6-plan) the held fraction dims to show it isn't filling.
+ */
 const drawHold = (graphics: Graphics, { centre, radius }: Ring, layout: Layout, progress: HoldProgress) => {
   const width = Math.max(MIN_RING_STROKE, RING_STROKE * layout.scale);
 
@@ -49,7 +54,7 @@ const drawHold = (graphics: Graphics, { centre, radius }: Ring, layout: Layout, 
     graphics
       .moveTo(from.x, from.y)
       .arc(centre.x, centre.y, radius, start, end)
-      .stroke({ width, color: WHITE });
+      .stroke({ width, color: WHITE, alpha: progress.held && !progress.leaning ? PAUSED_ALPHA : 1 });
   }
 };
 

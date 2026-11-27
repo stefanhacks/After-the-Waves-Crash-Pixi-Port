@@ -1,6 +1,7 @@
 // Swipe mode (m6-plan): the controls toggle, the pad shown only in pad mode, the gesture of each challenge, the ghost
 // stroke and the screen shake. The states see it as their pad (`pad`) and their challenge controls (`controls`).
 // Written by Claude Code.
+import type { AudioEngine, UiLoop } from "../core/audio/audio-engine.ts";
 import { snapToDevicePixels } from "../core/layout.ts";
 import type { PlayfieldDisplay } from "../core/display.ts";
 import type { ChallengeSpec } from "../game/challenges/rule.ts";
@@ -26,6 +27,9 @@ export const gestureFor = (spec: ChallengeSpec | null): GestureControl | null =>
     : { kind: spec.kind === "hold" ? "brace" : "haul", heading: spec.direction };
 };
 
+/** Chart's notch tick: the haul tick, played higher (03, New assets needed). */
+const NOTCH_TICK_RATE = 1.5;
+
 /** Whether a touch screen is the main pointer: swipe mode's default. */
 const coarsePointer = () => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
@@ -37,17 +41,44 @@ export interface ControlsWiring {
   readonly display: PlayfieldDisplay;
   readonly layouts: LayoutBus;
   readonly clock: { readonly now: number };
+  readonly audio: Pick<AudioEngine, "playUi" | "loopUi">;
   /** Read once; a unit test passes its own. */
   readonly setting?: ControlsSetting;
 }
 
 export const wireControls = ({
-  router, padView, gestureHint, controlsButton, display, layouts, clock,
+  router, padView, gestureHint, controlsButton, display, layouts, clock, audio,
   setting = createControlsSetting(coarsePointer()),
 }: ControlsWiring) => {
   // What the states asked for, kept so a toggle can apply the other mode to it.
   let padWanted = false;
   let challenge: ChallengeSpec | null = null;
+  // The gesture sounds (03, UI channel): a tick per knot, the same tick higher per notch, the creak while leaning.
+  let ticked = router.gesturePresses;
+  let creak: UiLoop | null = null;
+
+  const syncSounds = () => {
+    const presses = router.gesturePresses;
+    // A few at most per frame: a fast drag over several notches shouldn't stack a burst of clicks.
+    const ticks = Math.min(3, presses - ticked);
+
+    ticked = presses;
+
+    for (let tick = 0; tick < ticks; tick++) {
+      if (challenge?.kind === "many") {
+        audio.playUi("haulTick");
+      } else if (challenge?.kind === "sequence") {
+        audio.playUi("haulTick", { rate: NOTCH_TICK_RATE });
+      }
+    }
+
+    if (router.gestureLeaning && creak === null) {
+      creak = audio.loopUi("creakLoop");
+    } else if (!router.gestureLeaning && creak !== null) {
+      creak.stop();
+      creak = null;
+    }
+  };
 
   const shake = createScreenShake(
     {
@@ -107,6 +138,7 @@ export const wireControls = ({
     sync: (now: number) => {
       shake.sync(now);
       gestureHint.sync(now, router.gesturePresses);
+      syncSounds();
     },
   };
 };

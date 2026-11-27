@@ -52,7 +52,7 @@ const {
   audio, lifecycle, muteButton, pauseButton, flashesButton, endlessButton, controlsButton, continuePrompt,
 } = wireAudio(layers, layouts, reduceFlashes);
 // Swipe or pad (m6-plan): the states' pad and challenge controls go through it.
-const swipe = wireControls({ router, padView, gestureHint, controlsButton, display, layouts, clock });
+const swipe = wireControls({ router, padView, gestureHint, controlsButton, display, layouts, clock, audio });
 const cueLog = createCueLog(() => clock.now);
 
 // The gate's view needs nothing loaded; the scene needs the textures and the font.
