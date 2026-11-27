@@ -43,10 +43,8 @@ These notes come from the reviewer, not the agents.
    - **One active pointer only.** A second finger is ignored, which is what keeps the mash exploit closed.
 3. **Correct notch:** the next node lights, the boat drifts slightly that way, and a wake line grows behind it.
 4. **Wrong notch:** progress goes back to node 0, and the vignette pulses (not lightning, to stay under the 3 flashes/s budget).
-   - A wrong notch that equals heading 0 advances to step 1 instead (the KB fix from 02).
-5. **Timeouts:** both replace the original 1 s keydown timeout, and both need playtesting.
-   - **Stall:** finger down, no new notch for about 1 s.
-   - **Lift grace:** about 1 s to put the finger back down and resume.
+   - This includes a wrong notch that equals heading 0: the attempt starts over and needs heading 0 again (owner decision, as `sequence.ts` does; it replaces the earlier "advances to step 1").
+5. **Timeout:** the existing Sequence timeout, unchanged: 1 s after the last correct notch, progress goes back to node 0. It covers both a stalled finger and a lifted one (owner decision; the separate stall and lift-grace timers were dropped).
 6. **Building unease:** in later rounds the wake line lags or sways behind the finger ("is it steering you?") and the vignette tightens. The bubbles already rise 2 → 4 → 6.
 7. **The mash exploit** is impossible, because one pointer gives one axis per notch.
 8. **Accessibility:** the compass pad is the fallback: tap the arrows in order. The earlier "tap a node" idea was dropped by the owner, because the nodes are out of thumb reach in portrait and "the node in a direction" isn't well-defined.
@@ -102,10 +100,11 @@ These notes come from the reviewer, not the agents.
 3. **A second SFX channel:** yes. UI ticks play on their own channel, so they never cut off the thunder or the kraken.
 4. **All Hands lets several fingers drum:** confirmed.
 5. **New audio assets:** made by Claude as placeholders (see New assets needed). They're optional for a first version.
+6. **Sequence after a wrong input:** it always starts over, even when the wrong input equals step 0. One 1 s timeout for Chart. Pad versus gestures, teaching, Brace's wrong sector and endless mode were decided in [m6-plan.md](m6-plan.md).
 
 ## Device tuning still to measure
 
 - Notch size (32–40 px), Brace threshold (36 px, ±45°) and knot distance D (40–48 px), in both orientations and on small phones.
-- Chart's stall timeout and lift grace.
+- Whether Chart's 1 s timeout is comfortable while dragging.
 - Whether the side bands in landscape are wide enough, about 180–220 px on 16:9 (uncertain, varies by device).
 - Long-press callout and double-tap zoom suppression on iOS and Android.

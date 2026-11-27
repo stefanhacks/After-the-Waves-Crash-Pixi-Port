@@ -52,7 +52,7 @@ Use one on-screen cross of 4 buttons (↑ ↓ ← →) for all three challenge t
 | Original quirk | Decision |
 |---|---|
 | Mashing all arrows advances a Sequence | **Fix.** It disappears with event-driven input. |
-| A wrong key that equals step 0 resets to 0 | **Fix:** it advances to step 1. Mis-taps are more common on touch. |
+| A wrong key that equals step 0 resets to 0 | **Keep** (owner decision, replacing the earlier "it advances to step 1"): any wrong input resets to 0, and step 0 must be pressed again. |
 | The Many window starts at spawn and its timer leaks between challenges | **Fix:** the window starts at the first correct tap and resets for each challenge. |
 | Cursor visuals lag input by one frame | **Fix**, for free. |
 | A wrong press resets the Sequence to 0 | **Keep.** It is the game's only tension. |
