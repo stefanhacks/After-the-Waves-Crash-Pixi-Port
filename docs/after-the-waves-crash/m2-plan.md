@@ -42,7 +42,7 @@ The game in M2 is therefore static and silent: scene changes are instant, but ev
   - Arrows are uniform. A **seedable RNG** (`?seed=` URL parameter, for tests and bug reports) is passed in, never `Math.random` directly.
 - **Rules:** each challenge type is a small state machine fed input events (`press(dir)`, `release(dir)`, `cancelAll()`) and time (from the `TimerScope`). It reports progress for the view: pointer index, hold fraction, press count. It reports completion. All of 02's fixes are included:
   - **Sequence:**
-    - a wrong input resets to 0, but a wrong input equal to step 0 goes to step 1;
+    - a wrong input resets to 0, but a wrong input equal to step 0 goes to step 1 (later replaced: any wrong input resets to 0, see owner decision 6);
     - 1 s without a correct input resets;
     - a wrong input does **not** restart the timer (owner decision);
     - simultaneous presses count in event order, so the old "mash all arrows" exploit is gone.
@@ -135,7 +135,7 @@ The same pattern as M0 and M1: builders write, reviewers only read and report, C
 3. **Story text:** the real script, paged, without the typewriter.
 4. **Pad visibility:** only during rounds.
 5. **Tap while typing (M4):** a tap finishes the current line. The next tap advances.
-6. **Sequence step-0 forgiveness (decided after the wave-1 review):** a wrong press equal to step 0 counts as a correct step 0 and **restarts** the 1 s timer. Truly wrong presses still reset to 0 without restarting it.
+6. **Sequence step-0 forgiveness (decided after the wave-1 review):** a wrong press equal to step 0 counts as a correct step 0 and **restarts** the 1 s timer. Truly wrong presses still reset to 0 without restarting it. **Replaced later** ([endless-plan.md](endless-plan.md), follow-ups): every wrong press resets to 0, even one equal to step 0.
 
 ## Rules for wave 2 (from the wave-1 reviews)
 

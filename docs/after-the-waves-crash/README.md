@@ -16,7 +16,7 @@ A knowledge base for porting [After the Waves Crash](https://github.com/stefanha
 | [m4-refactor.md](m4-refactor.md) | M4 wave 0: the readability refactor proposal for the scene, main and the states. |
 | [m5-plan.md](m5-plan.md) | M5 effects and lifecycle plan, with the screen-tone flash options. |
 | [m5-particles-spec.md](m5-particles-spec.md) | The original's rain, splash and bubble particle systems, converted to playfield units. |
-| [m6-plan.md](m6-plan.md) | M6 touch-native gestures plan (draft): recognisers for Chart, Brace and Haul over the existing rules, owner questions. |
+| [m6-plan.md](m6-plan.md) | M6 touch-native gestures plan (draft): recognisers for Chart, Brace and Haul over the existing rules, the swipe/pad toggle, owner decisions. |
 | [endless-plan.md](endless-plan.md) | Endless mode (done): timed challenges, difficulty curve, the corner icon, owner decisions, as built. |
 
 ## How it was produced
