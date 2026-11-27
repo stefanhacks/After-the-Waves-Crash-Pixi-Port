@@ -1,64 +1,72 @@
-// Haul the Line (Many, 03 and m6-plan): repeated strokes along the heading, one knot per `knotPx` of rope. Pure
-// TypeScript. Written by Claude Code.
+// Haul the Line (Many, 03 and m6-plan): strokes along the heading, each worth several presses, counted when the finger
+// lifts. Pure TypeScript. Written by Claude Code.
 import type { Direction } from "../../direction.ts";
 import { UNIT, type Emit, type Recogniser, type TuningSource } from "./gesture.ts";
 
-interface Rope {
-  /** The pointer's last position projected on the heading's axis. */
-  along: number;
-  /** Rope pulled toward the next knot. */
-  pulled: number;
-}
-
 /**
- * - Several pointers, each with its own rope (03: several fingers count).
- * - Only travel along the heading's axis counts; cross-axis travel projects to nothing. Travel toward the heading adds
- *   to the rope, travel back takes from it, never below 0: a return stroke counts for nothing, and a finger resting
- *   on the glass can't creep a knot out of its jitter.
- * - Every `knotPx` pulled emits `press(heading)`, and the rope starts on the next knot. Nothing else is ever emitted,
- *   so hauling never shakes the arrows.
+ * - Each finger is its own stroke, from where it went down to where it lifts (owner request: a stroke counts on
+ *   release, like Chart's swipe).
+ * - A correct stroke travelled at least `haulStrokePx` toward the heading, and its sideways travel is at most
+ *   `swipeSlantRatio` of that. On its lift it emits `haulPressesPerStroke` presses of the heading at once (owner
+ *   request: more than one per stroke, so 10 presses take a few strokes, not 10 in 3 s).
+ * - Any other stroke (too short, slanted, toward another direction) counts for nothing and emits nothing, so hauling
+ *   never shakes the arrows. A cancelled finger counts for nothing.
+ * - Several fingers may haul at once, each its own stroke (03: several fingers count).
  */
 export const createHaul = (heading: Direction, emit: Emit, tuning: TuningSource): Recogniser => {
-  const ropes = new Map<number, Rope>();
+  const strokes = new Map<number, { readonly fromX: number; readonly fromY: number; x: number; y: number }>();
   const unit = UNIT[heading];
-  const project = (x: number, y: number) => x * unit.x + y * unit.y;
 
   return {
     down: (id, x, y) => {
-      ropes.set(id, { along: project(x, y), pulled: 0 });
+      strokes.set(id, { fromX: x, fromY: y, x, y });
     },
     move: (id, x, y) => {
-      const rope = ropes.get(id);
+      const stroke = strokes.get(id);
 
-      if (rope === undefined) {
-        return;
-      }
-
-      const along = project(x, y);
-      // At least 1 px, so a bad debug value can't loop forever.
-      const knotPx = Math.max(1, tuning().knotPx);
-
-      rope.pulled = Math.max(0, rope.pulled + along - rope.along);
-      rope.along = along;
-
-      while (rope.pulled >= knotPx) {
-        rope.pulled -= knotPx;
-        emit({ kind: "press", dir: heading });
+      if (stroke !== undefined) {
+        stroke.x = x;
+        stroke.y = y;
       }
     },
     up: (id) => {
-      ropes.delete(id);
+      const stroke = strokes.get(id);
+
+      if (stroke === undefined) {
+        return;
+      }
+
+      strokes.delete(id);
+
+      const { haulStrokePx, haulPressesPerStroke, swipeSlantRatio } = tuning();
+      const dx = stroke.x - stroke.fromX;
+      const dy = stroke.y - stroke.fromY;
+      // Travel toward the heading, and sideways from its axis.
+      const along = dx * unit.x + dy * unit.y;
+      const across = Math.abs(dx * unit.y - dy * unit.x);
+
+      if (along < haulStrokePx || across > swipeSlantRatio * along) {
+        return;
+      }
+
+      for (let press = 0; press < haulPressesPerStroke; press++) {
+        emit({ kind: "press", dir: heading });
+      }
     },
     cancel: (id) => {
-      ropes.delete(id);
+      strokes.delete(id);
     },
-    letGoAll: () => ropes.clear(),
-    reset: () => ropes.clear(),
+    letGoAll: () => strokes.clear(),
+    reset: () => strokes.clear(),
     leaning: false,
     inspect: () => ({
       kind: "haul",
       heading,
-      ropes: [...ropes.entries()].map(([id, rope]) => ({ id, pulled: Math.round(rope.pulled) })),
+      strokes: [...strokes.entries()].map(([id, stroke]) => ({
+        id,
+        dx: Math.round(stroke.x - stroke.fromX),
+        dy: Math.round(stroke.y - stroke.fromY),
+      })),
     }),
   };
 };

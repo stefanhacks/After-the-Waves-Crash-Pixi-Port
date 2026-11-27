@@ -545,8 +545,8 @@ export const useControls = (page: Page, mode: "swipe" | "pad") => page.addInitSc
 
 /**
  * Swipe mode (m6-plan) through CDP touches in the first control zone. A Sequence is a swipe per heading, counted on
- * its lift (down, a 48 px drag, up); a Many is one finger hauling a knot per entry and returning; a Hold drags 56 px
- * toward the heading and stays until `release`. Moves go in 4 steps, as a finger's move stream would.
+ * its lift (down, a 48 px drag, up); a Many is the same per stroke, each worth the live `haulPressesPerStroke`; a Hold
+ * drags 56 px toward the heading and stays until `release`. Moves go in 4 steps, as a finger's move stream would.
  */
 export const swipeDriver = async (page: Page): Promise<TouchDriver> => {
   const touch = await touchDriver(page);
@@ -606,22 +606,11 @@ export const swipeDriver = async (page: Page): Promise<TouchDriver> => {
       // A Many answers 10 or more of one direction (answerChallenge); no Sequence is that long.
       const many = dirs.length >= 10 && dirs.every((dir) => dir === dirs[0]);
 
-      if (many) {
-        const start = await centre();
+      // Just enough strokes: a press past the Many's 10 would land on the next challenge.
+      const perStroke = many ? await page.evaluate(() => window.debug.gestures.tuning.haulPressesPerStroke) : 1;
+      const strokes = dirs.slice(0, Math.ceil(dirs.length / perStroke));
 
-        await send("touchStart", [start]);
-
-        for (const dir of dirs) {
-          const end = await drag(start, dir, 48);
-
-          await send("touchMove", [{ ...end, x: start.x, y: start.y }]);
-        }
-
-        await send("touchEnd", [start]);
-        return;
-      }
-
-      for (const dir of dirs) {
+      for (const dir of strokes) {
         const start = await centre();
 
         await send("touchStart", [start]);

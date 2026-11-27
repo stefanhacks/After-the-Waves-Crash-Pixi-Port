@@ -211,66 +211,80 @@ describe("Brace (Hold)", () => {
 describe("Haul (Many)", () => {
   const haul: Make = (emit, tuning) => createHaul("down", emit, tuning);
 
-  it("counts a knot per knotPx pulled toward the heading; return strokes count nothing", () => {
+  /** One finger: down, a drag to (dx, dy) from there, then up. */
+  const stroke = (t: ReturnType<typeof setup>, id: number, dx: number, dy: number) => {
+    t.down(id, 100, 100);
+    t.drag(id, 100 + dx, 100 + dy);
+    t.recogniser.up(id);
+  };
+
+  it("counts haulPressesPerStroke presses for a stroke toward the heading, on its lift", () => {
     const t = setup(haul);
 
     t.down(1, 100, 100);
-
-    for (let stroke = 0; stroke < 3; stroke++) {
-      t.drag(1, 100, 100 + 100);
-      t.drag(1, 100, 100);
-    }
-
-    // 100 px a stroke: 2 knots and 12 px over, which the return stroke takes back.
-    assert.deepEqual(t.events, Array(6).fill("press down"));
+    t.drag(1, 100, 400, 30);
+    assert.deepEqual(t.events, [], "nothing while the finger is down, however far it pulls");
+    t.recogniser.up(1);
+    assert.deepEqual(t.events, ["press down", "press down"]);
   });
 
-  it("ignores cross-axis travel", () => {
+  it("makes a Many's 10 presses in 5 strokes", () => {
+    const t = setup(haul);
+
+    for (let id = 1; id <= 5; id++) {
+      stroke(t, id, 0, 60);
+    }
+
+    assert.equal(t.events.length, 10);
+  });
+
+  it("counts nothing, and shakes nothing, for a short, slanted or wrong-way stroke", () => {
+    const t = setup(haul);
+
+    stroke(t, 1, 0, 43);
+    stroke(t, 2, 50, 60);
+    stroke(t, 3, 0, -100);
+    stroke(t, 4, 100, 0);
+    assert.deepEqual(t.events, []);
+  });
+
+  it("counts by where the finger lifts: pulled and brought back is no stroke", () => {
     const t = setup(haul);
 
     t.down(1, 0, 0);
-    t.drag(1, 300, 0);
+    t.drag(1, 0, 100);
     t.drag(1, 0, 0);
+    t.recogniser.up(1);
     assert.deepEqual(t.events, []);
   });
 
-  it("can't creep a knot out of a resting finger's jitter", () => {
-    const t = setup(haul);
-
-    t.down(1, 0, 0);
-
-    for (let sample = 0; sample < 200; sample++) {
-      t.recogniser.move(1, 0, sample % 2 === 0 ? 1 : -1);
-    }
-
-    assert.deepEqual(t.events, []);
-  });
-
-  it("counts several fingers on their own ropes", () => {
+  it("counts several fingers' strokes on their own", () => {
     const t = setup(haul);
 
     t.down(1, 0, 0);
     t.down(2, 50, 0);
-    t.drag(1, 0, 30);
-    t.drag(2, 50, 30);
-    assert.deepEqual(t.events, [], "30 px each: no knot yet, even though 60 px were pulled in all");
-    t.drag(1, 0, 44);
-    t.drag(2, 50, 44);
-    assert.deepEqual(t.events, ["press down", "press down"]);
+    t.drag(1, 0, 60);
+    t.drag(2, 50, 60);
+    t.recogniser.up(1);
+    t.recogniser.up(2);
+    assert.equal(t.events.length, 4);
   });
 
-  it("forgets a lifted or cancelled finger, and a finger down before a reset", () => {
-    const t = setup(haul);
+  it("counts nothing for a cancelled finger, or one down before a reset or letGoAll", () => {
+    for (const end of ["cancel", "reset", "letGoAll"] as const) {
+      const t = setup(haul);
 
-    t.down(1, 0, 0);
-    t.recogniser.up(1);
-    t.drag(1, 0, 100);
-    t.down(2, 0, 0);
-    t.recogniser.cancel(2);
-    t.drag(2, 0, 100);
-    t.down(3, 0, 0);
-    t.recogniser.reset();
-    t.drag(3, 0, 100);
-    assert.deepEqual(t.events, []);
+      t.down(1, 0, 0);
+      t.drag(1, 0, 100);
+
+      if (end === "cancel") {
+        t.recogniser.cancel(1);
+      } else {
+        t.recogniser[end]();
+      }
+
+      t.recogniser.up(1);
+      assert.deepEqual(t.events, [], end);
+    }
   });
 });

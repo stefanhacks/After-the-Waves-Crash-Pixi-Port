@@ -28,7 +28,7 @@ export const gestureFor = (spec: ChallengeSpec | null): GestureControl | null =>
 };
 
 /** Chart's swipe tick: the haul tick, played higher (03, New assets needed). */
-const NOTCH_TICK_RATE = 1.5;
+const SWIPE_TICK_RATE = 1.5;
 
 /** Whether a touch screen is the main pointer: swipe mode's default. */
 const coarsePointer = () => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
@@ -53,23 +53,21 @@ export const wireControls = ({
   // What the states asked for, kept so a toggle can apply the other mode to it.
   let padWanted = false;
   let challenge: ChallengeSpec | null = null;
-  // The gesture sounds (03, UI channel): a tick per knot, the same tick higher per swipe, the creak while leaning.
+  // The gesture sounds (03, UI channel): a tick per Haul stroke, the same tick higher per Chart swipe, the creak
+  // while leaning.
   let ticked = router.gesturePresses;
   let creak: UiLoop | null = null;
 
   const syncSounds = () => {
-    const presses = router.gesturePresses;
-    // A few at most per frame: several knots in one fast stroke shouldn't stack a burst of clicks.
-    const ticks = Math.min(3, presses - ticked);
+    const counted = router.gesturePresses - ticked;
 
-    ticked = presses;
+    ticked = router.gesturePresses;
 
-    for (let tick = 0; tick < ticks; tick++) {
-      if (challenge?.kind === "many") {
-        audio.playUi("haulTick");
-      } else if (challenge?.kind === "sequence") {
-        audio.playUi("haulTick", { rate: NOTCH_TICK_RATE });
-      }
+    // One tick per frame with a count: a Haul stroke's presses land together, and stacked clicks would only be louder.
+    if (counted > 0 && challenge?.kind === "many") {
+      audio.playUi("haulTick");
+    } else if (counted > 0 && challenge?.kind === "sequence") {
+      audio.playUi("haulTick", { rate: SWIPE_TICK_RATE });
     }
 
     if (router.gestureLeaning && creak === null) {

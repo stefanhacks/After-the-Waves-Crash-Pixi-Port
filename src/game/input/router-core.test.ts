@@ -510,9 +510,10 @@ describe("router core: swipe mode (m6-plan)", () => {
   it("counts the gesture presses and reads live tunables", () => {
     const { core, centre } = setupSwipe({ kind: "haul", heading: "down" });
 
-    core.setGestureTuning({ ...core.gestureTuning, knotPx: 10 });
+    core.setGestureTuning({ ...core.gestureTuning, haulStrokePx: 10, haulPressesPerStroke: 3 });
     core.pointerDown(1, centre.x, centre.y);
-    core.pointerMove(1, centre.x, centre.y + 30);
+    core.pointerMove(1, centre.x, centre.y + 20);
+    core.pointerUp(1, centre.x, centre.y + 20);
     assert.equal(core.gesturePresses, 3);
   });
 });

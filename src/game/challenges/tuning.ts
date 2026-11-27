@@ -107,8 +107,13 @@ export interface GestureTuning {
   readonly braceThresholdPx: number;
   /** Brace: how far off a direction's axis (degrees) the lean still counts as that direction. 45 leaves no gaps. */
   readonly braceHalfAngleDeg: number;
-  /** Haul: rope pulled along the heading per knot (one counted press). */
-  readonly knotPx: number;
+  /** Haul: the shortest stroke toward the heading that counts, from where the finger went down to where it lifts. */
+  readonly haulStrokePx: number;
+  /**
+   * Haul: the presses one correct stroke counts, so a Many's 10 take 5 strokes in its 3 s window (03's estimate was
+   * 4–6), not 10.
+   */
+  readonly haulPressesPerStroke: number;
 }
 
 export const GESTURE_TUNING: GestureTuning = {
@@ -116,5 +121,6 @@ export const GESTURE_TUNING: GestureTuning = {
   swipeSlantRatio: 0.6,
   braceThresholdPx: 36,
   braceHalfAngleDeg: 45,
-  knotPx: 44,
+  haulStrokePx: 44,
+  haulPressesPerStroke: 2,
 };

@@ -74,7 +74,7 @@ export interface InputRouter {
   setGesture(control: GestureControl | null): void;
   /** Whether a gesture recogniser takes the control zones now. */
   readonly gestureActive: boolean;
-  /** How many gesture presses (swipes, leans, knots) were emitted so far. */
+  /** How many gesture presses (swipes, leans, Haul strokes' presses) were emitted so far. */
   readonly gesturePresses: number;
   /** Whether Brace's finger leans on the heading now. */
   readonly gestureLeaning: boolean;

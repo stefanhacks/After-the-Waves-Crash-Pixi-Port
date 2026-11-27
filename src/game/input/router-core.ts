@@ -120,7 +120,7 @@ export const createRouterCore = () => {
   let gesture: GestureControl | null = null;
   let recogniser: Recogniser | null = null;
   let tuning: GestureTuning = GESTURE_TUNING;
-  // Counted gesture presses (swipes, leans, knots): the ghost stroke fades at the first (gesture-hint.ts).
+  // Counted gesture presses (swipes, leans, Haul presses): the ghost stroke fades at the first (gesture-hint.ts).
   let gesturePresses = 0;
   const emit = (event: GestureEvent) => {
     if (event.kind === "press") {

@@ -1,6 +1,6 @@
 // The ghost stroke (m6-plan owner decision 2): in swipe mode, the first time each challenge kind comes up in a game
 // (and in each endless run), a faint fingertip and its trail loop in every control zone, toward the heading (a
-// Sequence's first one). It goes at the first counted gesture (a swipe, a lean or a knot). Under reduced motion it is
+// Sequence's first one). It goes at the first counted gesture (a swipe, a lean or a stroke). Under reduced motion it is
 // a still stroke. Drawn with Graphics in the ui layer (CSS px), like the pad, on the game clock. Written by Claude
 // Code.
 import { Container, Graphics } from "pixi.js";
