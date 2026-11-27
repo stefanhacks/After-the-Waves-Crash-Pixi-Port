@@ -90,3 +90,31 @@ export const ENDLESS_TUNING: EndlessTuning = {
   betweenMs: 300,
   storyLevels: [5, 10, 15],
 };
+
+/**
+ * The touch gestures (m6-plan, 03): distances in #game CSS px, since thumbs don't scale with the playfield. Starting
+ * values from 03 for device playtests; `window.debug.gestures` can change them live. Written by Claude Code.
+ */
+export interface GestureTuning {
+  /** Chart: drag along one axis this far to commit one heading. */
+  readonly notchPx: number;
+  /**
+   * Chart: the other axis may drift up to this share of a notch before a commit. Past it the drag is too diagonal to
+   * read, so the origin re-zeroes at the finger and the next notch is measured from there.
+   */
+  readonly chartDriftRatio: number;
+  /** Brace: the lean starts this far from where the finger went down. */
+  readonly braceThresholdPx: number;
+  /** Brace: how far off a direction's axis (degrees) the lean still counts as that direction. 45 leaves no gaps. */
+  readonly braceHalfAngleDeg: number;
+  /** Haul: rope pulled along the heading per knot (one counted press). */
+  readonly knotPx: number;
+}
+
+export const GESTURE_TUNING: GestureTuning = {
+  notchPx: 36,
+  chartDriftRatio: 0.6,
+  braceThresholdPx: 36,
+  braceHalfAngleDeg: 45,
+  knotPx: 44,
+};

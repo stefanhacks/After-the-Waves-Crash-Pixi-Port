@@ -22,6 +22,8 @@ export interface FrameLoopDeps {
   readonly weather: { sync(now: number): void };
   /** The endless-mode icon's pulse (game/endless-button.ts), on the game clock, after the clips. */
   readonly endlessButton: { sync(now: number): void };
+  /** Swipe mode's screen shake and ghost stroke (controls-wiring.ts), on the game clock, after the clips. */
+  readonly swipe: { sync(now: number): void };
   /** The renderer's clear colour from the flash (game/screen-tone.ts), once the clips have synced. */
   readonly screenTone: { sync(): void };
   readonly errors: ErrorSink;
@@ -31,7 +33,8 @@ export interface FrameLoopDeps {
 
 /** Every call goes through its object (`audio.tick()`, not a destructured `tick`): e2e replaces them. */
 export const startFrameLoop = ({
-  ticker, stepper, pause, padView, router, audio, timescale, clock, clips, weather, endlessButton, screenTone, errors,
+  ticker, stepper, pause, padView, router, audio, timescale, clock, clips, weather, endlessButton, swipe, screenTone,
+  errors,
   renderPlayfield,
 }: FrameLoopDeps) => {
   // The only thing that ticks the clock. Its first error halts the game logic: it is reported as an uncaught error and
@@ -49,6 +52,7 @@ export const startFrameLoop = ({
     clips.sync(clock.now);
     weather.sync(clock.now);
     endlessButton.sync(clock.now);
+    swipe.sync(clock.now);
     padView.update((dir) => router.isHeld(dir));
   }, (error) => {
     errors.report(error);

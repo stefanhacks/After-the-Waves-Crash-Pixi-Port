@@ -27,7 +27,7 @@ describe("HoldRule", () => {
 
     assert.equal(rule.done, true);
     assert.deepEqual(doneAt, [3250]);
-    assert.deepEqual(rule.progress, { kind: "hold", held: false, fraction: 1 });
+    assert.deepEqual(rule.progress, { kind: "hold", held: false, leaning: false, fraction: 1 });
   });
 
   it("resets on release, and a new press needs the full 3 s again", () => {
@@ -36,7 +36,7 @@ describe("HoldRule", () => {
     rule.press("up");
     clock.tick(2999);
     rule.release("up");
-    assert.deepEqual(rule.progress, { kind: "hold", held: false, fraction: 0 });
+    assert.deepEqual(rule.progress, { kind: "hold", held: false, leaning: false, fraction: 0 });
     clock.tick(100);
     rule.press("up");
     clock.tick(2999);
@@ -147,7 +147,7 @@ describe("HoldRule", () => {
     rule.cancelAll();
     clock.tick(5000);
     assert.deepEqual(doneAt, [3000]);
-    assert.deepEqual(rule.progress, { kind: "hold", held: false, fraction: 1 });
+    assert.deepEqual(rule.progress, { kind: "hold", held: false, leaning: false, fraction: 1 });
   });
 
   it("freezes while the clock is paused", () => {
@@ -157,7 +157,7 @@ describe("HoldRule", () => {
     clock.tick(1000);
     clock.paused = true;
     clock.tick(10000);
-    assert.deepEqual(rule.progress, { kind: "hold", held: true, fraction: 1 / 3 });
+    assert.deepEqual(rule.progress, { kind: "hold", held: true, leaning: true, fraction: 1 / 3 });
     clock.paused = false;
     clock.tick(1999);
     assert.equal(rule.done, false);
@@ -191,5 +191,80 @@ describe("HoldRule", () => {
     rule.press("left");
     assert.equal(misses, 1);
     assert.equal(rule.progress.held, true, "the running hold goes on");
+  });
+
+  describe("ease (Brace's pause, m6-plan)", () => {
+    it("pauses a running hold and resumes it: the runs add up to exactly holdMs", () => {
+      const { clock, rule, doneAt } = setup();
+
+      rule.press("up");
+      clock.tick(1000);
+      rule.ease("up");
+      assert.deepEqual(rule.progress, { kind: "hold", held: true, leaning: false, fraction: 1 / 3 });
+      clock.tick(5000);
+      assert.equal(rule.done, false, "a paused hold doesn't complete");
+      assert.deepEqual(rule.progress, { kind: "hold", held: true, leaning: false, fraction: 1 / 3 });
+      rule.press("up");
+      clock.tick(1999);
+      assert.equal(rule.done, false);
+      clock.tick(1);
+      assert.deepEqual(doneAt, [8000]);
+    });
+
+    it("pauses as often as it is eased", () => {
+      const { clock, rule, doneAt } = setup();
+
+      for (let run = 0; run < 3; run++) {
+        rule.press("up");
+        clock.tick(900);
+        rule.ease("up");
+        clock.tick(100);
+      }
+
+      rule.press("up");
+      clock.tick(299);
+      assert.equal(rule.done, false);
+      clock.tick(1);
+      assert.deepEqual(doneAt, [3300]);
+    });
+
+    it("loses the paused progress on a release, a cancelAll or a reset", () => {
+      for (const end of ["release", "cancelAll", "reset"] as const) {
+        const { clock, rule, doneAt } = setup();
+
+        rule.press("up");
+        clock.tick(2000);
+        rule.ease("up");
+
+        if (end === "release") {
+          rule.release("up");
+        } else {
+          rule[end]();
+        }
+
+        assert.deepEqual(rule.progress, { kind: "hold", held: false, leaning: false, fraction: 0 }, end);
+        rule.press("up");
+        clock.tick(2999);
+        assert.equal(rule.done, false, `${end}: a new hold needs the whole holdMs`);
+        clock.tick(1);
+        assert.deepEqual(doneAt, [5000], end);
+      }
+    });
+
+    it("ignores an ease of another direction, with nothing held, or twice", () => {
+      const { clock, rule, doneAt } = setup();
+
+      rule.ease("up");
+      rule.press("up");
+      clock.tick(1000);
+      rule.ease("left");
+      assert.equal(rule.progress.held && rule.progress.leaning, true, "another direction: still running");
+      rule.ease("up");
+      clock.tick(500);
+      rule.ease("up");
+      rule.press("up");
+      clock.tick(2000);
+      assert.deepEqual(doneAt, [3500]);
+    });
   });
 });

@@ -20,9 +20,14 @@ export interface SequenceProgress {
 
 export interface HoldProgress {
   readonly kind: "hold";
-  /** True while a hold that started during this challenge is running. */
+  /** True from a press that started a hold during this challenge until its release: running or paused. */
   readonly held: boolean;
-  /** 0 when not held, rising to 1 at completion. */
+  /**
+   * True while the held hold runs. False while it is paused by `ease` (Brace's finger slid back inside its threshold,
+   * m6-plan): the ring stays where it is.
+   */
+  readonly leaning: boolean;
+  /** 0 when not held, rising to 1 at completion; frozen while paused. */
   readonly fraction: number;
 }
 
@@ -98,6 +103,12 @@ export interface ChallengeRule {
   reset(): void;
   readonly done: boolean;
   readonly progress: ChallengeProgress;
+  /**
+   * `dir` is still held but no longer leant on: Brace's finger slid back inside its threshold or out of the heading's
+   * sector (m6-plan). A Hold pauses (a later `press(dir)` resumes it); Sequence and Many ignore it. The keyboard and
+   * the pad never send it. Ignored after `done`.
+   */
+  ease(dir: Direction): void;
 }
 
 /** The usual RuleContext: `now` reads the clock that owns `scope`. */

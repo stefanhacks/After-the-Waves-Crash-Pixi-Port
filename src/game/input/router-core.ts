@@ -29,13 +29,26 @@
 //   states: Title's prompt and the Ending's replay prompt) and the pause input isn't "paused". Its tap, and the E key
 //   (keyboard.ts `isEndlessKey`) under the same conditions, queue an "endless" event (no activation), then call the
 //   endless listeners. Otherwise the square and the key are ordinary input.
+// - The controls toggle (m6-plan owner decision 1) takes taps while its listener is registered, paused or not, like the
+//   "reduce flashes" toggle: a tap only calls its listeners.
+// - Swipe mode (m6-plan): while the controls are "swipe" and the states have set a gesture (`setGesture`, per
+//   challenge), a pointer that goes down in a control zone, past the corner buttons, goes to that gesture's recogniser
+//   (gestures/) instead of the pad hit-test, and its moves follow it. It is still tracked by the PointerMap as holding
+//   nothing, so its pointerup advances and activates as any tap does. A recogniser is made afresh on every
+//   `setGesture` and every controls change, so a finger already down never counts for a new challenge; the old one
+//   lets its fingers go first (Brace's release). `beginEpoch` forgets them silently, `cancelAll` lets them go.
 // - A listener that throws is reported (reportError) and the others still
 //   run; the event stays queued.
 
-import type { Layout } from "../../core/layout.ts";
+import type { Layout, Rect } from "../../core/layout.ts";
+import { GESTURE_TUNING, type GestureTuning } from "../challenges/tuning.ts";
 import type { Direction } from "../direction.ts";
 import type { CornerButton } from "./corner-geometry.ts";
 import { createCornerPresses } from "./corner-presses.ts";
+import { createBrace } from "./gestures/brace.ts";
+import { createChart } from "./gestures/chart.ts";
+import type { GestureEvent, Recogniser } from "./gestures/gesture.ts";
+import { createHaul } from "./gestures/haul.ts";
 import { computePads, hitTest, type Pad } from "./pad-geometry.ts";
 import { PointerMap } from "./pointer-map.ts";
 
@@ -43,6 +56,17 @@ export type Listener = () => void;
 
 /** What the pause button and keys do now (see the contract above). */
 export type PauseInput = "off" | "ready" | "paused";
+
+/** Which control the challenges use (m6-plan owner decision 1). */
+export type ControlsMode = "swipe" | "pad";
+
+/** The gesture of the challenge up now (m6-plan): Chart for a Sequence, Brace for a Hold, Haul for a Many. */
+export type GestureControl =
+  | { readonly kind: "chart" }
+  | { readonly kind: "brace" | "haul"; readonly heading: Direction };
+
+const insideAny = (rects: readonly Rect[], x: number, y: number) =>
+  rects.some((rect) => x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height);
 
 const reportListenerError = (error: unknown) => {
   if (typeof globalThis.reportError === "function") {
@@ -82,6 +106,7 @@ export const createRouterCore = () => {
     pause: new Set(),
     flashes: new Set(),
     endless: new Set(),
+    controls: new Set(),
   };
   let activated = false;
   let touchActivation = false;
@@ -90,6 +115,37 @@ export const createRouterCore = () => {
     callAll(activateListeners);
   });
   let pads: readonly Pad[] = [];
+  let zones: readonly Rect[] = [];
+  let controls: ControlsMode = "pad";
+  let gesture: GestureControl | null = null;
+  let recogniser: Recogniser | null = null;
+  let tuning: GestureTuning = GESTURE_TUNING;
+  // Counted gesture presses (notches, leans, knots): the ghost stroke fades at the first (gesture-hint.ts).
+  let gesturePresses = 0;
+  const emit = (event: GestureEvent) => {
+    if (event.kind === "press") {
+      gesturePresses += 1;
+    }
+
+    map.queueGesture(event);
+  };
+  const makeRecogniser = (control: GestureControl): Recogniser => {
+    const live = () => tuning;
+
+    switch (control.kind) {
+    case "chart":
+      return createChart(emit, live);
+    case "brace":
+      return createBrace(control.heading, emit, live);
+    case "haul":
+      return createHaul(control.heading, emit, live);
+    }
+  };
+  // The old recogniser lets its fingers go (Brace's release), then a new one starts with none.
+  const rebuild = () => {
+    recogniser?.letGoAll();
+    recogniser = controls === "swipe" && gesture !== null ? makeRecogniser(gesture) : null;
+  };
   let pauseInput: PauseInput = "off";
   let endlessInput = false;
   const endlessOn = () => endlessInput && pauseInput !== "paused";
@@ -115,6 +171,7 @@ export const createRouterCore = () => {
     map,
     setLayout: (layout: Layout) => {
       pads = computePads(layout);
+      zones = layout.zones;
       corners.setLayout(layout);
     },
     /** The mute button's hit square in the current layout, or null. */
@@ -129,6 +186,10 @@ export const createRouterCore = () => {
     get flashesRect() {
       return corners.rects.flashes;
     },
+    /** The controls toggle's hit square in the current layout, or null. */
+    get controlsRect() {
+      return corners.rects.controls;
+    },
     /** The endless-mode icon's hit square in the current layout, or null. */
     get endlessRect() {
       return corners.rects.endless;
@@ -141,15 +202,62 @@ export const createRouterCore = () => {
     setPauseInput: (input: PauseInput) => {
       pauseInput = input;
     },
+    /** The challenges' control from now on: swipe (the gestures) or the pad. */
+    setControls: (mode: ControlsMode) => {
+      if (mode !== controls) {
+        controls = mode;
+        rebuild();
+      }
+    },
+    get controls() {
+      return controls;
+    },
+    /** The gesture of the challenge up now, or null (set per challenge by the states). Always a new recogniser. */
+    setGesture: (control: GestureControl | null) => {
+      gesture = control;
+      rebuild();
+    },
+    /** Whether a recogniser takes the control zones now (swipe mode, a challenge up). */
+    get gestureActive() {
+      return recogniser !== null;
+    },
+    /** How many gesture presses were emitted so far. */
+    get gesturePresses() {
+      return gesturePresses;
+    },
+    /** The live gesture tunables (`window.debug.gestures`). */
+    get gestureTuning() {
+      return tuning;
+    },
+    setGestureTuning: (next: GestureTuning) => {
+      tuning = next;
+    },
+    /** The active recogniser's state, for `window.debug.gestures`. */
+    inspectGesture: () => recogniser?.inspect() ?? null,
     pointerDown: (id: number, x: number, y: number) => {
       touchActivation = false;
 
       if (corners.down(id, x, y)) {
         map.pointerCancel(id);
+        recogniser?.cancel(id);
         return;
       }
 
-      map.pointerDown(id, hitTest(pads, x, y)?.dir ?? null);
+      if (recogniser === null) {
+        map.pointerDown(id, hitTest(pads, x, y)?.dir ?? null);
+        return;
+      }
+
+      // A lost up for a live id: the recogniser lets the old pointer go first, as the PointerMap does.
+      recogniser.cancel(id);
+      map.pointerDown(id, null);
+
+      if (insideAny(zones, x, y)) {
+        recogniser.down(id, x, y);
+      }
+    },
+    pointerMove: (id: number, x: number, y: number) => {
+      recogniser?.move(id, x, y);
     },
     /** `touch`: a touch contact (`pointerType === "touch"`), so its `touchend` repeats the activation. */
     pointerUp: (id: number, x: number, y: number, touch = false) => {
@@ -158,6 +266,8 @@ export const createRouterCore = () => {
       }
 
       activated = false;
+      // Before the PointerMap's up, so a Brace release comes before the tap's advance.
+      recogniser?.up(id);
       map.pointerUp(id);
       touchActivation = touch && activated;
     },
@@ -170,6 +280,7 @@ export const createRouterCore = () => {
     },
     pointerCancel: (id: number) => {
       if (!corners.cancel(id)) {
+        recogniser?.cancel(id);
         map.pointerCancel(id);
       }
     },
@@ -205,7 +316,13 @@ export const createRouterCore = () => {
     },
     cancelAll: () => {
       corners.clear();
+      recogniser?.letGoAll();
       map.cancelAll();
+    },
+    /** A new state or phase: the PointerMap's epoch, and the recogniser forgets its fingers silently. */
+    beginEpoch: () => {
+      map.beginEpoch();
+      recogniser?.reset();
     },
     isHeld: (dir: Direction) => map.isHeld(dir),
     onActivate: (listener: Listener) => subscribe(activateListeners, listener),
@@ -216,6 +333,8 @@ export const createRouterCore = () => {
     onFlashes: (listener: Listener) => subscribe(listeners.flashes, listener),
     /** The endless-mode icon's tap and the E key call `listener`, after queueing their event. Returns unsubscribe. */
     onEndless: (listener: Listener) => subscribe(listeners.endless, listener),
+    /** The controls toggle's tap calls `listener`. Returns the unsubscribe. */
+    onControls: (listener: Listener) => subscribe(listeners.controls, listener),
   };
 };
 

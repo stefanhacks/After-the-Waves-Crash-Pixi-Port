@@ -14,9 +14,9 @@ import type { Layout, Point, Rect } from "../../core/layout.ts";
 
 /**
  * The corner stack, top to bottom: owner decision 7's order, mute, pause, then the "reduce flashes" toggle; then the
- * endless-mode icon (endless-plan.md).
+ * endless-mode icon (endless-plan.md); then the swipe / pad controls toggle (m6-plan).
  */
-export const CORNER_BUTTONS = ["mute", "pause", "flashes", "endless"] as const;
+export const CORNER_BUTTONS = ["mute", "pause", "flashes", "endless", "controls"] as const;
 
 export type CornerButton = (typeof CORNER_BUTTONS)[number];
 

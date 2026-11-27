@@ -317,6 +317,19 @@ class FakeEndlessIcon {
   }
 }
 
+class FakeControls {
+  challenge: ChallengeSpec | null = null;
+  screenShakes = 0;
+
+  setChallenge(spec: ChallengeSpec | null) {
+    this.challenge = spec;
+  }
+
+  shakeScreen() {
+    this.screenShakes += 1;
+  }
+}
+
 class FakePad {
   visible = false;
   dimmed = false;
@@ -345,6 +358,7 @@ const setup = ({ auto = true } = {}) => {
   const scene = new FakeScene(clock);
   const input = new FakeInput();
   const pad = new FakePad();
+  const controls = new FakeControls();
   const endlessIcon = new FakeEndlessIcon();
   let seed = 41;
   // Every cue with the clock's time, as main.ts logs them.
@@ -357,6 +371,7 @@ const setup = ({ auto = true } = {}) => {
     clock,
     input,
     pad,
+    controls,
     scene: () => scene,
     nextSeed: () => ++seed,
     tuning: TUNING,
@@ -375,7 +390,7 @@ const setup = ({ auto = true } = {}) => {
     }
   };
 
-  return { clock, scene, input, pad, game, machine, frame, wait, loader, gateView, audio, cues, endlessIcon };
+  return { clock, scene, input, pad, controls, game, machine, frame, wait, loader, gateView, audio, cues, endlessIcon };
 };
 
 type Setup = ReturnType<typeof setup>;
@@ -1073,7 +1088,7 @@ describe("round", () => {
 
     t.input.queue.push({ kind: "cancel" });
     t.frame();
-    assert.deepEqual(t.scene.progress, { kind: "hold", held: false, fraction: 0 });
+    assert.deepEqual(t.scene.progress, { kind: "hold", held: false, leaning: false, fraction: 0 });
   });
 });
 
@@ -1119,7 +1134,7 @@ describe("frame stepper", () => {
     stepper.step(100);
     assert.equal(t.clock.now, before, "the resumed frame adds no time");
     assert.equal(t.scene.challenge?.kind, "hold");
-    assert.deepEqual(t.scene.progress, { kind: "hold", held: false, fraction: 0 });
+    assert.deepEqual(t.scene.progress, { kind: "hold", held: false, leaning: false, fraction: 0 });
 
     stepper.step(100);
     assert.equal(t.clock.now, before + 100);

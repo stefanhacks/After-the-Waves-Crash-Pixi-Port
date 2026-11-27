@@ -35,7 +35,7 @@ const BACKDROPS: readonly (Backdrop | null)[] = [null, "pillars", "tentacles", n
  * change: the text box wraps the page itself.
  */
 export const createEndless = (deps: GameDeps, session: GameSession): GameState => {
-  const { audio, clock, input, pad, scene, tuning, endless } = deps;
+  const { audio, clock, input, pad, controls, scene, tuning, endless } = deps;
   let rng: Rng = createRng(0);
   // When the shown whisper was typed out (game time), or null while it types.
   let typedAt: number | null = null;
@@ -104,6 +104,7 @@ export const createEndless = (deps: GameDeps, session: GameSession): GameState =
 
     view.setChallenge(spec);
     view.setProgress(session.timed?.progress ?? null);
+    controls.setChallenge(spec);
     // Only the single-arrow challenges get the hint, as in Round.
     pad.setHint(spec !== null && spec.kind !== "sequence" ? spec.direction : null);
   };
@@ -111,6 +112,7 @@ export const createEndless = (deps: GameDeps, session: GameSession): GameState =
   /** Hides the challenge and its hint, the pad dimmed (`cleared`) or gone (`caught`). */
   const clearChallenge = () => {
     scene().setChallenge(null);
+    controls.setChallenge(null);
     scene().setTimeLeft(null);
     pad.setHint(null);
     session.timed = null;
@@ -191,7 +193,7 @@ export const createEndless = (deps: GameDeps, session: GameSession): GameState =
             break;
           }
 
-          applyChallengeInput(session.timed, event);
+          applyChallengeInput(session.timed, event, () => controls.shakeScreen());
         }
 
         const timed = session.timed;
@@ -215,6 +217,7 @@ export const createEndless = (deps: GameDeps, session: GameSession): GameState =
     },
     exit: () => {
       scene().setChallenge(null);
+      controls.setChallenge(null);
       scene().setTimeLeft(null);
       pad.setHint(null);
       session.timed = null;

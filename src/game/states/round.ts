@@ -19,7 +19,7 @@ const BACKDROPS: readonly (Backdrop | null)[] = ["pillars", "tentacles", null];
  * and AFTER_ROUND_MS later the next story part starts. Events after that are dropped.
  */
 export const createRound = (deps: GameDeps, session: GameSession): GameState => {
-  const { clock, input, pad, scene, tuning } = deps;
+  const { clock, input, pad, controls, scene, tuning } = deps;
 
   const showChallenge = () => {
     const spec = session.round?.current?.spec ?? null;
@@ -27,6 +27,7 @@ export const createRound = (deps: GameDeps, session: GameSession): GameState => 
 
     view.setChallenge(spec);
     view.setProgress(session.round?.current?.progress ?? null);
+    controls.setChallenge(spec);
     // Only the single-arrow challenges get the hint: on a Sequence it would give the order away.
     pad.setHint(spec !== null && spec.kind !== "sequence" ? spec.direction : null);
   };
@@ -41,6 +42,7 @@ export const createRound = (deps: GameDeps, session: GameSession): GameState => 
     pad.setDimmed(true);
     pad.setHint(null);
     view.setChallenge(null);
+    controls.setChallenge(null);
 
     if (backdrop !== null) {
       view.setBackdrop(backdrop, true, FADE);
@@ -84,13 +86,14 @@ export const createRound = (deps: GameDeps, session: GameSession): GameState => 
           break;
         }
 
-        applyChallengeInput(round, event);
+        applyChallengeInput(round, event, () => controls.shakeScreen());
       }
 
       scene().setProgress(round?.current?.progress ?? null);
     },
     exit: () => {
       scene().setChallenge(null);
+      controls.setChallenge(null);
       pad.setHint(null);
       session.round = null;
     },

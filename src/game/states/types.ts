@@ -33,6 +33,17 @@ export interface PadControl {
   setHint(dir: Direction | null): void;
 }
 
+/**
+ * Swipe mode's side the states drive (m6-plan; app/controls-wiring.ts satisfies it): which gesture the challenge up
+ * needs, and Brace's wrong-sector feedback. In pad mode `setChallenge` changes nothing the states can see.
+ */
+export interface ChallengeControls {
+  /** The challenge up now, or null: the gesture recogniser and the ghost stroke follow it. A new spec: a new one. */
+  setChallenge(spec: ChallengeSpec | null): void;
+  /** Brace's finger entered a wrong sector: the playfield shakes (m6-plan owner decision 4). */
+  shakeScreen(): void;
+}
+
 /** How story text wraps right now. A new object after every layout change, so a state can tell it changed. */
 export interface Paging {
   readonly linesPerPage: number;
@@ -222,6 +233,7 @@ export interface GameDeps {
   readonly clock: GameClock;
   readonly input: InputSource;
   readonly pad: PadControl;
+  readonly controls: ChallengeControls;
   /** The scene. Only called once `loader.load()` resolved (every state after Gate). */
   readonly scene: () => SceneView;
   /** The seed of each new game: `?seed=` based in tests and bug reports, random otherwise. */

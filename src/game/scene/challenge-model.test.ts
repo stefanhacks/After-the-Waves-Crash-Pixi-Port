@@ -4,7 +4,12 @@ import type { ChallengeProgress } from "../challenges/rule.ts";
 import { cursorKey, progressKey } from "./challenge-model.ts";
 
 const sequence = (pointer: number): ChallengeProgress => ({ kind: "sequence", pointer, length: 3 });
-const hold = (fraction: number): ChallengeProgress => ({ kind: "hold", held: fraction > 0, fraction });
+const hold = (fraction: number): ChallengeProgress => ({
+  kind: "hold",
+  held: fraction > 0,
+  leaning: fraction > 0,
+  fraction,
+});
 const many = (count: number): ChallengeProgress => ({ kind: "many", count, target: 5, windowRemainingMs: 0 });
 
 describe("progressKey", () => {

@@ -2,6 +2,7 @@
 import type { Application } from "pixi.js";
 import type { AudioEngine } from "./core/audio/audio-engine.ts";
 import type { GameClock } from "./core/clock.ts";
+import type { GestureTuning } from "./game/challenges/tuning.ts";
 import type { PlayfieldDisplay } from "./core/display.ts";
 import type { Layers } from "./core/layers.ts";
 import type { Layout } from "./core/layout.ts";
@@ -46,6 +47,20 @@ export interface DebugApi {
   readonly pause: Pause;
   /** The "reduce flashes" toggle (reduce-flashes.ts) and the screen tone's grey (screen-tone.ts, 0..1) now. */
   readonly flashes: { readonly reduced: boolean; readonly tone: number };
+  /**
+   * Swipe mode (m6-plan): the controls in use, whether a recogniser is active, the gesture presses so far, whether the
+   * ghost stroke is up, the active recogniser's state and the live tunables.
+   */
+  readonly gestures: {
+    readonly controls: "swipe" | "pad";
+    readonly active: boolean;
+    readonly presses: number;
+    readonly hint: boolean;
+    readonly state: Record<string, unknown> | null;
+    readonly tuning: GestureTuning;
+  };
+  /** Changes some gesture tunables live (device tuning on a deploy preview); the rest keep their values. */
+  readonly setGestureTuning: (tuning: Partial<GestureTuning>) => void;
   /** Pixi's canvas text cache: its keys and how many are null; null where the private field isn't there. */
   readonly textCache: { readonly keys: number; readonly nulls: number } | null;
   /** The start gate's phase and load progress (0..1). */

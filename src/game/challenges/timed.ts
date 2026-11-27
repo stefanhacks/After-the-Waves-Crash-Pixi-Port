@@ -72,6 +72,12 @@ export class TimedChallenge implements ChallengeRule {
     }
   }
 
+  ease(dir: Direction): void {
+    if (!this.expired) {
+      this.rule.ease(dir);
+    }
+  }
+
   cancelAll(): void {
     if (!this.expired) {
       this.rule.cancelAll();

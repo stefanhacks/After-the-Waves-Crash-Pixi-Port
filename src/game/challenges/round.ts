@@ -66,6 +66,10 @@ export class Round {
     this.rule?.release(dir);
   }
 
+  ease(dir: Direction): void {
+    this.rule?.ease(dir);
+  }
+
   cancelAll(): void {
     this.rule?.cancelAll();
   }
