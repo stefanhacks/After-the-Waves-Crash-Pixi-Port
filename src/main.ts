@@ -1,6 +1,6 @@
 // The bootstrap, in startup order: each step is a module in src/app/. Several of these orders are contracts
 // (m4-refactor.md, rules 1–2): the ui layer's children (debug overlay, pad, ghost stroke, mute button, pause button,
-// reduce-flashes button, endless-mode button, controls button, Tap to continue, the gate's view, then the scene's
+// reduce-flashes button, controls button, endless-mode button, Tap to continue, the gate's view, then the scene's
 // texts), the router's `visibilitychange` listener before the page lifecycle's, Gate's activation hook before the
 // lifecycle's, and the ticker's game logic → audio tick → screen tone → render pass.
 import "./style.css";

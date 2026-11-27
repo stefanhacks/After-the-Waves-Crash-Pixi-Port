@@ -41,7 +41,7 @@ const toRound = async (page: Page) => {
   return driver;
 };
 
-test("plays round 0 with swipes: Chart and Brace, the pad hidden, the ghost stroke until the first notch", {
+test("plays round 0 with swipes: Chart and Brace, the pad hidden, the ghost stroke until the first swipe", {
   tag: ["@touch", "@slow"],
 }, async ({ page }) => {
   const driver = await toRound(page);
@@ -55,7 +55,7 @@ test("plays round 0 with swipes: Chart and Brace, the pad hidden, the ghost stro
   await expect.poll(async () => (await readGestures(page)).hint).toBe(true);
 
   if (first?.kind === "sequence") {
-    // One notch: the ghost goes, and the Sequence moves on.
+    // One swipe: the ghost goes, and the Sequence moves on.
     await setTimescale(page, 0.25);
     await driver.tapAll(first.directions.slice(0, 1));
     await expect.poll(async () => (await readGestures(page)).hint).toBe(false);

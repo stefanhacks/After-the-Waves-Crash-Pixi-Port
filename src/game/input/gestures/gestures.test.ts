@@ -37,79 +37,72 @@ const setup = (make: Make, tuning: GestureTuning = GESTURE_TUNING) => {
 describe("Chart (Sequence)", () => {
   const chart: Make = (emit, tuning) => createChart(emit, tuning);
 
-  it("commits one heading per notch along the larger axis, relative to the last commit", () => {
+  /** One finger: down at the origin, a drag to (dx, dy), then up. */
+  const swipe = (t: ReturnType<typeof setup>, id: number, dx: number, dy: number) => {
+    t.down(id, 200, 400);
+    t.drag(id, 200 + dx, 400 + dy);
+    t.recogniser.up(id);
+  };
+
+  it("counts a swipe once, on its lift, however long it is", () => {
     const t = setup(chart);
 
     t.down(1, 200, 400);
-    t.drag(1, 200, 400 - 35);
-    assert.deepEqual(t.events, [], "under a notch");
-    t.drag(1, 200, 400 - 36);
-    t.drag(1, 200 + 36, 400 - 36);
-    t.drag(1, 200 + 36, 400 - 36 + 72);
-    assert.deepEqual(t.events, ["press up", "press right", "press down", "press down"]);
+    t.drag(1, 200, 400 - 300, 30);
+    assert.deepEqual(t.events, [], "nothing while the finger is down");
+    t.recogniser.up(1);
+    assert.deepEqual(t.events, ["press up"]);
   });
 
-  it("never runs out of room: nine ups in a 200 px zone, lifting and putting the finger back", () => {
+  it("reads each swipe's larger axis", () => {
     const t = setup(chart);
 
-    for (let stroke = 0; stroke < 3; stroke++) {
-      t.down(1, 100, 180);
-      t.drag(1, 100, 180 - 3 * 36);
-      t.recogniser.up(1);
-    }
-
-    assert.deepEqual(t.events, Array(9).fill("press up"));
+    swipe(t, 1, 0, -40);
+    swipe(t, 2, 50, 10);
+    swipe(t, 3, 0, 120);
+    swipe(t, 4, -36, 0);
+    assert.deepEqual(t.events, ["press up", "press right", "press down", "press left"]);
   });
 
-  it("commits every notch of a move that covers several at once, keeping the remainder", () => {
+  it("counts by where the finger lifts, not the path: out and back is no swipe", () => {
     const t = setup(chart);
 
     t.down(1, 0, 0);
-    t.drag(1, 80, 0, 1);
-    assert.deepEqual(t.events, ["press right", "press right"]);
-    t.drag(1, 108, 0, 1);
-    assert.deepEqual(t.events, ["press right", "press right", "press right"], "8 px left over, then 28 more");
-  });
-
-  it("reads nothing from a diagonal drag, and re-zeroes so the next straight notch counts", () => {
-    const t = setup(chart);
-
-    t.down(1, 0, 0);
-    t.drag(1, 200, 200, 50);
+    t.drag(1, 0, -100);
+    t.drag(1, 0, -10);
+    t.recogniser.up(1);
     assert.deepEqual(t.events, []);
-    t.drag(1, 200, 200 + 36);
-    assert.deepEqual(t.events, ["press down"]);
   });
 
-  it("tolerates drift under the limit", () => {
+  it("ignores a swipe shorter than swipePx, or too diagonal", () => {
     const t = setup(chart);
 
-    t.down(1, 0, 0);
-    t.drag(1, 36, 21);
-    assert.deepEqual(t.events, ["press right"]);
+    swipe(t, 1, 0, -35);
+    swipe(t, 2, 100, 70);
+    swipe(t, 3, 100, 100);
+    assert.deepEqual(t.events, []);
+    swipe(t, 4, 100, 60);
+    assert.deepEqual(t.events, ["press right"], "a slant of exactly swipeSlantRatio still counts");
   });
 
-  it("follows one pointer only: a second finger is ignored until the first lifts", () => {
+  it("counts several fingers on their own, in lift order", () => {
     const t = setup(chart);
 
     t.down(1, 0, 0);
     t.down(2, 100, 0);
-    t.drag(2, 100, -100);
-    assert.deepEqual(t.events, []);
-    t.drag(1, 0, -36);
+    t.drag(1, 0, -50);
+    t.drag(2, 150, 0);
+    t.recogniser.up(2);
     t.recogniser.up(1);
-    t.drag(2, 100, -200);
-    assert.deepEqual(t.events, ["press up"], "the second finger went down while the first was active");
-    t.down(3, 0, 0);
-    t.drag(3, -36, 0);
-    assert.deepEqual(t.events, ["press up", "press left"]);
+    assert.deepEqual(t.events, ["press right", "press up"]);
   });
 
-  it("forgets the pointer on cancel and reset", () => {
+  it("counts nothing for a cancelled finger, or one down before a reset or letGoAll", () => {
     for (const end of ["cancel", "reset", "letGoAll"] as const) {
       const t = setup(chart);
 
       t.down(1, 0, 0);
+      t.drag(1, 0, 100);
 
       if (end === "cancel") {
         t.recogniser.cancel(1);
@@ -117,7 +110,7 @@ describe("Chart (Sequence)", () => {
         t.recogniser[end]();
       }
 
-      t.drag(1, 0, 100);
+      t.recogniser.up(1);
       assert.deepEqual(t.events, [], end);
     }
   });

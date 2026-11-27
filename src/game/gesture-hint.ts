@@ -1,6 +1,6 @@
 // The ghost stroke (m6-plan owner decision 2): in swipe mode, the first time each challenge kind comes up in a game
 // (and in each endless run), a faint fingertip and its trail loop in every control zone, toward the heading (a
-// Sequence's first one). It goes at the first counted gesture (a notch, a lean or a knot). Under reduced motion it is
+// Sequence's first one). It goes at the first counted gesture (a swipe, a lean or a knot). Under reduced motion it is
 // a still stroke. Drawn with Graphics in the ui layer (CSS px), like the pad, on the game clock. Written by Claude
 // Code.
 import { Container, Graphics } from "pixi.js";
@@ -10,7 +10,7 @@ import type { Direction } from "./direction.ts";
 import { UNIT } from "./input/gestures/gesture.ts";
 import { ICON_COLOR } from "./corner-icon.ts";
 
-/** The stroke's length in CSS px: two Chart notches, about one Haul stroke. */
+/** The stroke's length in CSS px: a Chart swipe, about one Haul stroke. */
 export const HINT_STROKE_PX = 72;
 
 /** One loop: the fingertip travels for MOVE_MS, waits, then fades out by LOOP_MS. */

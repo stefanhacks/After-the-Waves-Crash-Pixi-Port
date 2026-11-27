@@ -6,7 +6,8 @@ import type { Direction } from "../../direction.ts";
 
 /**
  * What a recogniser emits into the input queue (pointer-map.ts has the full contract):
- * - `press(dir)`: one committed heading (Chart's notch, Haul's knot), or Brace's lean starting or resuming.
+ * - `press(dir)`: one committed heading (Chart's swipe, on its lift; Haul's knot), or Brace's lean starting or
+ *   resuming.
  * - `ease(dir)`: Brace's lean stopped, the finger still down (the Hold pauses).
  * - `release(dir)`: Brace's finger, which had leant, let go.
  * - `stray`: Brace's finger entered another direction's sector. The states shake the screen; the rule never sees it.

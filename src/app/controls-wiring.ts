@@ -27,7 +27,7 @@ export const gestureFor = (spec: ChallengeSpec | null): GestureControl | null =>
     : { kind: spec.kind === "hold" ? "brace" : "haul", heading: spec.direction };
 };
 
-/** Chart's notch tick: the haul tick, played higher (03, New assets needed). */
+/** Chart's swipe tick: the haul tick, played higher (03, New assets needed). */
 const NOTCH_TICK_RATE = 1.5;
 
 /** Whether a touch screen is the main pointer: swipe mode's default. */
@@ -53,13 +53,13 @@ export const wireControls = ({
   // What the states asked for, kept so a toggle can apply the other mode to it.
   let padWanted = false;
   let challenge: ChallengeSpec | null = null;
-  // The gesture sounds (03, UI channel): a tick per knot, the same tick higher per notch, the creak while leaning.
+  // The gesture sounds (03, UI channel): a tick per knot, the same tick higher per swipe, the creak while leaning.
   let ticked = router.gesturePresses;
   let creak: UiLoop | null = null;
 
   const syncSounds = () => {
     const presses = router.gesturePresses;
-    // A few at most per frame: a fast drag over several notches shouldn't stack a burst of clicks.
+    // A few at most per frame: several knots in one fast stroke shouldn't stack a burst of clicks.
     const ticks = Math.min(3, presses - ticked);
 
     ticked = presses;

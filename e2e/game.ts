@@ -544,8 +544,8 @@ export const useControls = (page: Page, mode: "swipe" | "pad") => page.addInitSc
 }, mode);
 
 /**
- * Swipe mode (m6-plan) through CDP touches in the first control zone. A Sequence is a stroke per heading (one notch
- * each: down, a 48 px drag, up); a Many is one finger hauling a knot per entry and returning; a Hold drags 56 px
+ * Swipe mode (m6-plan) through CDP touches in the first control zone. A Sequence is a swipe per heading, counted on
+ * its lift (down, a 48 px drag, up); a Many is one finger hauling a knot per entry and returning; a Hold drags 56 px
  * toward the heading and stays until `release`. Moves go in 4 steps, as a finger's move stream would.
  */
 export const swipeDriver = async (page: Page): Promise<TouchDriver> => {

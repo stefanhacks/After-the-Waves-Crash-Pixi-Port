@@ -1,89 +1,66 @@
-// Chart the Course (Sequence, 03 and m6-plan): a relative drag, one heading per notch. Pure TypeScript. Written by
-// Claude Code.
+// Chart the Course (Sequence, 03 and m6-plan): one swipe, one heading, counted when the finger lifts. Pure TypeScript.
+// Written by Claude Code.
 import type { Direction } from "../../direction.ts";
-import type { Emit, Recogniser, TuningSource } from "./gesture.ts";
+import { dominant, type Emit, type Recogniser, type TuningSource } from "./gesture.ts";
 
 /**
- * - One active pointer: the first to go down. Others are ignored until it lifts, which keeps the mash exploit closed
- *   (04, correction 7).
- * - Every `notchPx` of travel along the larger axis, from the origin, emits `press(dir)`, while the other axis stays
- *   under `chartDriftRatio` × notch. After a commit the origin moves on by the notches committed along that axis and
- *   follows the finger on the other, so the drag is relative, like a trackpad: ↑ × 9 never runs out of room. A move
- *   that covers several notches at once commits each.
- * - Drift: once the other axis reaches its limit before a commit, the drag is too diagonal to read; the origin
- *   re-zeroes at the finger, so the next notch is measured afresh instead of being blocked for good.
- * - No release, no ease: the Sequence ignores them. Its own 1 s timeout covers a stalled or lifted finger (owner
- *   decision 3).
+ * - Each finger is its own swipe, from where it went down to where it lifts. On the lift it emits one `press(dir)` for
+ *   the swipe's larger axis, however long the swipe was (owner request: a swipe counts once, on release).
+ * - It counts only if it travelled at least `swipePx`, and its other axis is at most `swipeSlantRatio` of the larger
+ *   one: a short or diagonal swipe counts for nothing, rather than guessing a heading (a wrong one resets the
+ *   Sequence).
+ * - A cancelled finger counts for nothing: the browser took the gesture over.
+ * - Several fingers may swipe at once; each lift is one discrete press, in lift order, so mashing can't advance a
+ *   Sequence (a wrong heading still resets it).
+ * - No release, no ease: the Sequence ignores them. Its own 1 s timeout runs from the last counted swipe.
  */
 export const createChart = (emit: Emit, tuning: TuningSource): Recogniser => {
-  let active: number | null = null;
-  let originX = 0;
-  let originY = 0;
-
-  const letGo = (id: number) => {
-    if (id === active) {
-      active = null;
-    }
-  };
+  const swipes = new Map<number, { readonly fromX: number; readonly fromY: number; x: number; y: number }>();
 
   return {
     down: (id, x, y) => {
-      if (active === null) {
-        active = id;
-        originX = x;
-        originY = y;
-      }
+      swipes.set(id, { fromX: x, fromY: y, x, y });
     },
     move: (id, x, y) => {
-      if (id !== active) {
+      const swipe = swipes.get(id);
+
+      if (swipe !== undefined) {
+        swipe.x = x;
+        swipe.y = y;
+      }
+    },
+    up: (id) => {
+      const swipe = swipes.get(id);
+
+      if (swipe === undefined) {
         return;
       }
 
-      const { chartDriftRatio } = tuning();
-      // At least 1 px, so a bad debug value can't loop forever.
-      const notchPx = Math.max(1, tuning().notchPx);
-      const dx = x - originX;
-      const dy = y - originY;
-      const horizontal = Math.abs(dx) > Math.abs(dy);
-      const major = horizontal ? dx : dy;
-      const minor = horizontal ? dy : dx;
+      swipes.delete(id);
 
-      if (Math.abs(minor) >= chartDriftRatio * notchPx) {
-        originX = x;
-        originY = y;
-        return;
-      }
+      const { swipePx, swipeSlantRatio } = tuning();
+      const dx = swipe.x - swipe.fromX;
+      const dy = swipe.y - swipe.fromY;
+      const major = Math.max(Math.abs(dx), Math.abs(dy));
+      const minor = Math.min(Math.abs(dx), Math.abs(dy));
 
-      const notches = Math.floor(Math.abs(major) / notchPx);
-
-      if (notches === 0) {
-        return;
-      }
-
-      const step = Math.sign(major) * notches * notchPx;
-      const dir: Direction = horizontal ? (major < 0 ? "left" : "right") : major < 0 ? "up" : "down";
-
-      if (horizontal) {
-        originX += step;
-        originY = y;
-      } else {
-        originY += step;
-        originX = x;
-      }
-
-      for (let notch = 0; notch < notches; notch++) {
-        emit({ kind: "press", dir });
+      if (major >= swipePx && minor <= swipeSlantRatio * major) {
+        emit({ kind: "press", dir: dominant(dx, dy) satisfies Direction });
       }
     },
-    up: letGo,
-    cancel: letGo,
-    letGoAll: () => {
-      active = null;
+    cancel: (id) => {
+      swipes.delete(id);
     },
-    reset: () => {
-      active = null;
-    },
+    letGoAll: () => swipes.clear(),
+    reset: () => swipes.clear(),
     leaning: false,
-    inspect: () => ({ kind: "chart", active, origin: active === null ? null : { x: originX, y: originY } }),
+    inspect: () => ({
+      kind: "chart",
+      swipes: [...swipes.entries()].map(([id, swipe]) => ({
+        id,
+        dx: Math.round(swipe.x - swipe.fromX),
+        dy: Math.round(swipe.y - swipe.fromY),
+      })),
+    }),
   };
 };

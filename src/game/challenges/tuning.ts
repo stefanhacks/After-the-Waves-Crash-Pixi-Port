@@ -96,13 +96,13 @@ export const ENDLESS_TUNING: EndlessTuning = {
  * values from 03 for device playtests; `window.debug.gestures` can change them live. Written by Claude Code.
  */
 export interface GestureTuning {
-  /** Chart: drag along one axis this far to commit one heading. */
-  readonly notchPx: number;
+  /** Chart: the shortest swipe that counts, from where the finger went down to where it lifts. */
+  readonly swipePx: number;
   /**
-   * Chart: the other axis may drift up to this share of a notch before a commit. Past it the drag is too diagonal to
-   * read, so the origin re-zeroes at the finger and the next notch is measured from there.
+   * Chart: a swipe's other axis may be at most this share of its larger one (0.6 is about 31° off the axis). A more
+   * diagonal swipe counts for nothing.
    */
-  readonly chartDriftRatio: number;
+  readonly swipeSlantRatio: number;
   /** Brace: the lean starts this far from where the finger went down. */
   readonly braceThresholdPx: number;
   /** Brace: how far off a direction's axis (degrees) the lean still counts as that direction. 45 leaves no gaps. */
@@ -112,8 +112,8 @@ export interface GestureTuning {
 }
 
 export const GESTURE_TUNING: GestureTuning = {
-  notchPx: 36,
-  chartDriftRatio: 0.6,
+  swipePx: 36,
+  swipeSlantRatio: 0.6,
   braceThresholdPx: 36,
   braceHalfAngleDeg: 45,
   knotPx: 44,

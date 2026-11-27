@@ -1,4 +1,4 @@
-// Audio (M3) and the pause (M5): the engine, the corner buttons (mute, pause, reduce flashes, endless mode, controls),
+// Audio (M3) and the pause (M5): the engine, the corner buttons (mute, pause, reduce flashes, controls, endless mode),
 // "Tap to
 // continue" and
 // the audio lifecycle, then the gestures that drive them. The states play the cues and pick the music (states/cues.ts,
@@ -26,8 +26,8 @@ export const wireAudio = (layers: Layers, layouts: LayoutBus, reduceFlashes: Pic
   const muteButton = createMuteButton(layers.ui);
   const pauseButton = createPauseButton(layers.ui);
   const flashesButton = createFlashesButton(layers.ui);
-  const endlessButton = createEndlessButton(layers.ui, watchReducedMotion());
   const controlsButton = createControlsButton(layers.ui);
+  const endlessButton = createEndlessButton(layers.ui, watchReducedMotion());
 
   muteButton.setMuted(audio.muted);
   flashesButton.setReduced(reduceFlashes.on);
@@ -35,8 +35,8 @@ export const wireAudio = (layers: Layers, layouts: LayoutBus, reduceFlashes: Pic
     muteButton.setLayout(next);
     pauseButton.setLayout(next);
     flashesButton.setLayout(next);
-    endlessButton.setLayout(next);
     controlsButton.setLayout(next);
+    endlessButton.setLayout(next);
   });
 
   // "Tap to continue": while the game is paused (pause.ts), or audio can't resume without a gesture (the lifecycle).

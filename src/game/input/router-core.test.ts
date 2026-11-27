@@ -397,14 +397,16 @@ const kinds = (core: Core) =>
   core.map.drain().map((event) => ("dir" in event ? `${event.kind} ${event.dir}` : event.kind));
 
 describe("router core: swipe mode (m6-plan)", () => {
-  it("sends a zone drag to the recogniser, not the pad: a pad button's spot presses nothing on its own", () => {
-    const { core, upCentre } = setupSwipe({ kind: "chart" });
+  it("sends a zone swipe to the recogniser, not the pad: a pad button's spot presses nothing on its own", () => {
+    const { core, log, upCentre } = setupSwipe({ kind: "chart" });
 
     core.pointerDown(1, upCentre.x, upCentre.y);
     assert.deepEqual(kinds(core), [], "no pad press on pointerdown");
     core.pointerMove(1, upCentre.x, upCentre.y - 40);
-    assert.deepEqual(kinds(core), ["press up"]);
+    assert.deepEqual(kinds(core), [], "nothing until the lift");
     assert.equal(core.isHeld("up"), false, "gesture presses don't hold");
+    core.pointerUp(1, upCentre.x, upCentre.y - 40);
+    assert.deepEqual(log, ["activate(press,advance)"], "the swipe's press, then the tap's advance");
   });
 
   it("still advances and activates on the gesture finger's up, after Brace's release", () => {
@@ -446,6 +448,8 @@ describe("router core: swipe mode (m6-plan)", () => {
     core.pointerDown(2, centre.x, centre.y);
     core.setGesture({ kind: "chart" });
     core.pointerMove(2, centre.x, centre.y - 80);
+    core.pointerUp(2, centre.x, centre.y - 80);
+    // Finger 2's lift still advances (drained by the activation hook): only its swipe is ignored.
     assert.deepEqual(kinds(core), []);
   });
 

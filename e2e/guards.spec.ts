@@ -292,10 +292,10 @@ test("a Hold close to its end, let go while the tab is hidden, doesn't complete:
 
 test("the ui layer's children at Title, in order", async ({ page }) => {
   await openGame(page);
-  // Back to front: what main.ts adds (debug overlay, pad, ghost stroke, mute, pause, reduce flashes, endless mode,
-  // controls, Tap to continue), then the gate's view and the scene's texts. The M4 refactor must keep this order
+  // Back to front: what main.ts adds (debug overlay, pad, ghost stroke, mute, pause, reduce flashes, controls,
+  // endless mode, Tap to continue), then the gate's view and the scene's texts. The M4 refactor must keep this order
   // (m4-refactor.md, rule 1); M5 adds the pause button and the reduce-flashes toggle under mute; endless mode its icon
-  // below them and the time bar; M6 the ghost stroke with the pad and the controls toggle at the bottom of the stack.
+  // below them and the time bar; M6 the ghost stroke with the pad and the controls toggle above endless mode.
   expect(await page.evaluate(() => window.debug.layers.ui.children.map((child) => child.label))).toEqual([
     "debug-overlay",
     "pad-view",
@@ -303,8 +303,8 @@ test("the ui layer's children at Title, in order", async ({ page }) => {
     "mute-button",
     "pause-button",
     "flashes-button",
-    "endless-button",
     "controls-button",
+    "endless-button",
     "continue",
     "gate-warning",
     "gate-prompt",

@@ -1,7 +1,7 @@
 // The controls toggle's view (m6-plan owner decision 1): drawn with Graphics in the ui layer (CSS px), below the
-// endless-mode icon. Swipe mode shows a fingertip with its stroke, pad mode a small cross. It only draws: the input
-// router hit-tests the same rect (input/corner-geometry.ts) before the control zones. Shown from the gate on, like
-// mute; hidden while the layout has no room for it. Written by Claude Code.
+// "reduce flashes" toggle and above the endless-mode icon. Swipe mode shows a fingertip with its stroke, pad mode a
+// small cross. It only draws: the input router hit-tests the same rect (input/corner-geometry.ts) before the control
+// zones. Shown from the gate on, like mute; hidden while the layout has no room for it. Written by Claude Code.
 import { Container, Graphics } from "pixi.js";
 import type { Layout } from "../core/layout.ts";
 import { ICON_COLOR, iconGrid } from "./corner-icon.ts";
