@@ -1,6 +1,6 @@
 # M6 Touch-native gestures: plan
 
-Milestone M6 from [04-implementation-difficulty.md](04-implementation-difficulty.md): gesture recognition for the three challenges, using the set designed in [03-new-mechanics.md](03-new-mechanics.md) (Chart the Course, Brace the Helm, Haul the Line). Planned against the code on `main` (`550d8be`). Written by Claude Code. **Status:** draft. The owner answered the first round of questions (**Owner decisions** at the end); one question on Brace is still open.
+Milestone M6 from [04-implementation-difficulty.md](04-implementation-difficulty.md): gesture recognition for the three challenges, using the set designed in [03-new-mechanics.md](03-new-mechanics.md) (Chart the Course, Brace the Helm, Haul the Line). Planned against the code on `main` (`550d8be`). Written by Claude Code. **Status:** draft, every owner question answered (**Owner decisions** at the end).
 
 ## What exists today
 
@@ -57,7 +57,7 @@ Why `press` per notch/knot: the rules already count presses, time them on the ga
 - New events in `InputEvent`:
   - `ease(dir)`: the lean on `dir` stopped but the finger is still down. Goes through `applyChallengeInput` to the rule; `SequenceRule` and `ManyRule` ignore it.
   - `stray`: Brace's finger entered a wrong sector. It never reaches the rule; the state calls `scene().shakeScreen()`.
-- The finger must stay down, leaning, until the ring is full. Lifting resets to 0 (open question 6 asks whether sliding back should also reset).
+- The finger must stay down until the ring is full. Lifting resets to 0; sliding back inside the threshold only pauses (owner decision 6).
 - `HoldRule` keeps the **accumulated** hold time instead of one start time. `press` resumes the timer with the time still missing; `ease` stops it and keeps the progress; `release`, `cancelAll` and `reset` still reset to 0.
 - `HoldProgress` gains `leaning: boolean`, so the ring can show paused versus filling. `fraction` freezes while eased.
 - The keyboard and the pad never send `ease`, so their behaviour is unchanged.
@@ -88,10 +88,10 @@ From 03, drawn with Pixi `Graphics` inside the pixel render texture:
 
 ### 6. Assists
 
-- **Latch** (Hold): tap the matching direction once, and the ring fills by itself; tap again to cancel. **On hold**: it lets the ring fill without the finger staying down, which may conflict with the owner's answer on mechanic 2 (open question 6). With the toggle, it would live in pad mode only.
+- **Latch** (Hold): tap the matching direction once, and the ring fills by itself; tap again to cancel. Kept (owner decision 6), as the one exception to "hold the finger until the ring is full". In pad mode it is the matching pad button; in swipe mode, a tap (down and up without crossing the Brace threshold) in the control zone starts and stops it. The keyboard's matching key works in both.
 - **Steady haul** (Many): the window doubles to 6 s.
 - **All Hands** (Many fallback, only if playtests show fatigue): the heading side of the zone becomes one drum target.
-- These depend on how the pad and gestures coexist (question 1), so they come last.
+- They come last, after the gestures they assist.
 
 ### 7. Debug and tuning
 
@@ -126,15 +126,13 @@ From 03, drawn with Pixi `Graphics` inside the pixel render texture:
 
 ## Owner decisions
 
-On the three mechanics: Chart and Haul as designed; Brace needs the finger held down until the hold timer ends (see question 6).
+On the three mechanics: Chart and Haul as designed; Brace needs the finger held down until the hold timer ends (see 6).
 
 1. **Pad and gestures:** a "swipe / pad" corner toggle, swipe by default on touch screens (deliverable 4b).
 2. **Teaching:** a ghost stroke (deliverable 5).
 3. **Chart's timeout:** the single existing 1 s timeout after the last correct notch.
 4. **Brace with a wrong sector:** shake the screen, not the arrows.
 5. **Endless mode:** gestures there too.
+6. **Brace:** sliding back inside the threshold pauses the ring (as 03 decided), and the Latch assist stays.
+
 - **Sequence:** any wrong input resets to 0, even one equal to step 0, as the code does. The docs that said "advances to step 1" (02, 03, m2-plan) were corrected.
-
-## Open question
-
-6. **Brace, "hold the finger there until the timer ends".** The plan already resets on lift. Two things still let progress survive without leaning: sliding back inside the threshold **pauses** the ring (03 owner decision 2), and the **Latch** assist fills the ring with no finger at all. Should sliding back **reset** instead of pause, and should Latch be dropped?
