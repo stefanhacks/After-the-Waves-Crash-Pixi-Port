@@ -53,9 +53,13 @@ export const wireControls = ({
   // What the states asked for, kept so a toggle can apply the other mode to it.
   let padWanted = false;
   let challenge: ChallengeSpec | null = null;
-  // The gesture sounds (03, UI channel): a tick per Haul stroke, the same tick higher per Chart swipe, the creak
-  // while leaning.
+  // The gesture sounds (03, UI channel): a tick per Haul stroke, the same tick higher per correct Chart swipe, the
+  // creak while leaning. Mistakes make no sound (owner request): the arrows' shake is their only feedback.
   let ticked = router.gesturePresses;
+  let missed = false;
+  // The challenge the presses since the last sync were aimed at: the one that was up then. A swipe that completes a
+  // Sequence lands while the next challenge is already up.
+  let aimedAt: ChallengeSpec["kind"] | null = null;
   let creak: UiLoop | null = null;
 
   const syncSounds = () => {
@@ -64,11 +68,15 @@ export const wireControls = ({
     ticked = router.gesturePresses;
 
     // One tick per frame with a count: a Haul stroke's presses land together, and stacked clicks would only be louder.
-    if (counted > 0 && challenge?.kind === "many") {
+    // None in a frame that drained a wrong one.
+    if (counted > 0 && !missed && aimedAt === "many") {
       audio.playUi("haulTick");
-    } else if (counted > 0 && challenge?.kind === "sequence") {
+    } else if (counted > 0 && !missed && aimedAt === "sequence") {
       audio.playUi("haulTick", { rate: SWIPE_TICK_RATE });
     }
+
+    missed = false;
+    aimedAt = challenge?.kind ?? null;
 
     if (router.gestureLeaning && creak === null) {
       creak = audio.loopUi("creakLoop");
@@ -122,6 +130,9 @@ export const wireControls = ({
       showChallenge();
     },
     shakeScreen: () => shake.shake(clock.now),
+    missed: () => {
+      missed = true;
+    },
   };
 
   return {

@@ -135,7 +135,10 @@ export const createEndless = (deps: GameDeps, session: GameSession): GameState =
     scene().setUndersea({ part: session.part, eyesFor: 0 });
 
     const spec = generateEndless(rng, session.level, endless);
-    const context = ruleContext(clock, scope, tuning, () => cleared(scope, machine), () => scene().shakeArrows());
+    const context = ruleContext(clock, scope, tuning, () => cleared(scope, machine), () => {
+      scene().shakeArrows();
+      controls.missed();
+    });
 
     const limitMs = timeLimitMs(spec, session.level, tuning, endless);
 

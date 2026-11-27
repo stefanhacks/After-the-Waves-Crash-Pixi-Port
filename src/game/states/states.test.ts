@@ -320,6 +320,7 @@ class FakeEndlessIcon {
 class FakeControls {
   challenge: ChallengeSpec | null = null;
   screenShakes = 0;
+  misses = 0;
 
   setChallenge(spec: ChallengeSpec | null) {
     this.challenge = spec;
@@ -327,6 +328,10 @@ class FakeControls {
 
   shakeScreen() {
     this.screenShakes += 1;
+  }
+
+  missed() {
+    this.misses += 1;
   }
 }
 
@@ -1103,6 +1108,25 @@ describe("round", () => {
 
     assert.equal(seen.length, 3);
     assert.equal(t.controls.challenge, null);
+  });
+
+  it("tells the controls about a wrong press (to keep the tick silent), not a right one", async () => {
+    const t = await toRound();
+    const spec = t.scene.challenge;
+
+    if (spec?.kind !== "sequence") {
+      throw new Error("round 0 opens with a Sequence");
+    }
+
+    const [first] = spec.directions;
+    const wrong = first === "up" ? "down" : "up";
+
+    t.input.press(first);
+    t.frame();
+    assert.equal(t.controls.misses, 0);
+    t.input.press(wrong);
+    t.frame();
+    assert.equal(t.controls.misses, 1);
   });
 
   it("pauses a Hold on Brace's ease, and shakes the screen on a stray without touching the Hold", async () => {

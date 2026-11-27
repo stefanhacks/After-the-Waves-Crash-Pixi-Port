@@ -42,6 +42,8 @@ export interface ChallengeControls {
   setChallenge(spec: ChallengeSpec | null): void;
   /** Brace's finger entered a wrong sector: the playfield shakes (m6-plan owner decision 4). */
   shakeScreen(): void;
+  /** A wrong press reached the challenge (the arrows shake): the gesture tick stays silent for it. */
+  missed(): void;
 }
 
 /** How story text wraps right now. A new object after every layout change, so a state can tell it changed. */

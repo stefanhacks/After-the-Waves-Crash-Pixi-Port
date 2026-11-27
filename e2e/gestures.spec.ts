@@ -1,6 +1,6 @@
 // Swipe mode (m6-plan): the gestures in the real page, through CDP touches on the iPhone project. The recognisers'
 // rules are unit-tested (src/game/input/gestures/); this checks the wiring: the router's move stream, the toggle, the
-// pad hidden, the ghost stroke and a cancel mid-Brace. Written by Claude Code.
+// pad hidden, the ghost stroke, the silent mistakes and a cancel mid-Brace. Written by Claude Code.
 import { expect, test, type Page } from "@playwright/test";
 import {
   FAST,
@@ -14,6 +14,7 @@ import {
   swipeDriver,
   useControls,
   waitFor,
+  waitFrames,
 } from "./game.ts";
 
 test.describe.configure({ timeout: 90_000 });
@@ -75,6 +76,38 @@ test("hauls round 1's Many", { tag: ["@touch", "@slow"] }, async ({ page }) => {
   // Round 1 always holds one Many (TUNING).
   await playRound(page, driver, { expectPad: false });
   expect((await readGame(page)).part).toBe(2);
+});
+
+test("a wrong swipe makes no sound; a right one ticks", { tag: "@touch" }, async ({ page }) => {
+  const driver = await toRound(page);
+  const spec = (await readGame(page)).challenge?.spec;
+
+  if (spec?.kind !== "sequence") {
+    throw new Error("round 0 opens with a Sequence");
+  }
+
+  const [first] = spec.directions;
+
+  // Every UI sound, through the object controls-wiring.ts calls.
+  await page.evaluate(() => {
+    const calls: string[] = [];
+
+    window.debug.audio.playUi = (key) => {
+      calls.push(key);
+    };
+    Object.assign(window, { uiCalls: calls });
+  });
+
+  const uiCalls = () => page.evaluate(() => (window as unknown as { uiCalls: string[] }).uiCalls.length);
+
+  await setTimescale(page, 0.25);
+  await driver.tapAll([first === "up" ? "down" : "up"]);
+  // The wrong swipe counted (and reset the Sequence), and a few frames passed for a tick to play.
+  await expect.poll(async () => (await readGestures(page)).presses).toBe(1);
+  await waitFrames(page);
+  expect(await uiCalls()).toBe(0);
+  await driver.tapAll([first]);
+  await expect.poll(uiCalls).toBe(1);
 });
 
 test("a cancelled touch mid-Brace resets the Hold", { tag: "@touch" }, async ({ page }) => {
